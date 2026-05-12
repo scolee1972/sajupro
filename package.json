@@ -9,7 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.94.0",
+    "@portone/browser-sdk": "^0.1.6",
+    "@supabase/supabase-js": "^2.105.3",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "korean-lunar-calendar": "^0.3.6",
     "next": "16.2.4",
+    "openai": "^6.36.0",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
