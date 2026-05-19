@@ -120,7 +120,15 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
   <style>
     @page {
       size: A4;
-      margin: 20mm;
+      margin: 15mm 20mm;
+      
+      /* 머리글/바닥글 제거 */
+      @top-left { content: ""; }
+      @top-center { content: ""; }
+      @top-right { content: ""; }
+      @bottom-left { content: ""; }
+      @bottom-center { content: ""; }
+      @bottom-right { content: ""; }
     }
     
     * {
@@ -292,8 +300,7 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
   </style>
 </head>
 <body>
-  <div class="print-controls">
-    <span class="info">💡 PDF로 저장하려면 "PDF로 저장" 버튼을 누르세요</span>
+    <div class="print-controls">
     <button onclick="window.print()">📄 PDF로 저장 / 인쇄</button>
     <button onclick="window.close()" style="background:#94a3b8">❌ 닫기</button>
   </div>
@@ -314,8 +321,10 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
     ${filteredHtml}
     ${followupsHtml}
     
-    <div class="print-footer">
-      본 보고서는 자평명리학 기반 AI 분석 결과로 참고 자료로 활용하시기 바랍니다.
+        <div class="print-footer">
+      본 보고서는 자평명리학을 기반으로 분석한 결과입니다.<br/>
+      참고 자료로 잘 활용하셔서 인생에 좋은 길잡이가 되길 진심으로 응원합니다!.<br/>
+      "운명은 정해진 것이 아니라, 만들어가는 것"
     </div>
   </div>
 

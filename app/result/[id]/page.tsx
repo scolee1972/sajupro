@@ -149,7 +149,9 @@ export default function CustomerResultPage() {
             gap: '8px', fontSize: '14px', color: '#93c5fd',
           }}>
             {customer?.gender && <div>👤 {customer.gender === 'male' ? '남성' : '여성'}</div>}
-            {customer?.birth_date && <div>🎂 {customer.birth_date}</div>}
+            {customer?.birth_date && (
+  <div>🎂 {customer.birth_date} {data.saju_data?.calendarType === 'lunar' ? '(음력)' : '(양력)'}</div>
+)}
             {customer?.birth_time && <div>⏰ {customer.birth_time}</div>}
             {customer?.birth_city && <div>📍 {customer.birth_city}</div>}
             <div>📋 {CATEGORY_KO[data.category]}</div>

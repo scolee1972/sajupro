@@ -129,7 +129,9 @@ export default function ResultPage() {
             {customer?.gender && <div>👤 {customer.gender === 'male' ? '남성' : '여성'}</div>}
             {customer?.phone && <div>📞 {customer.phone}</div>}
             {customer?.email && <div>✉️ {customer.email}</div>}
-            {customer?.birth_date && <div>🎂 {customer.birth_date}</div>}
+            {customer?.birth_date && (
+  <div>🎂 {customer.birth_date} {data.saju_data?.calendarType === 'lunar' ? '(음력)' : '(양력)'}</div>
+)}
             {customer?.birth_time && <div>⏰ {customer.birth_time}</div>}
             {customer?.birth_city && <div>📍 {customer.birth_city}</div>}
             <div>📋 {CATEGORY_KO[data.category]}</div>

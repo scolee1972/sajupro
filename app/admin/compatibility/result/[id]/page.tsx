@@ -41,15 +41,12 @@ export default function CompatibilityResultPage() {
   if (loading) {
     return (
       <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: '#f1f5f9',
+        minHeight: '100vh', background: '#f1f5f9',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '60px', marginBottom: '16px' }}>☯️</div>
-          <p>궁합 분석 결과 로딩 중...</p>
+          <div style={{ fontSize: '60px' }}>☯️</div>
+          <p>궁합 결과 로딩 중...</p>
         </div>
       </div>
     )
@@ -64,45 +61,34 @@ export default function CompatibilityResultPage() {
     )
   }
 
+  const p1Calendar = data.person1_calendar === 'lunar' ? '음력' : '양력'
+  const p2Calendar = data.person2_calendar === 'lunar' ? '음력' : '양력'
+
   return (
     <div style={{
-      minHeight: '100vh',
-      background: '#f1f5f9',
-      padding: '20px',
-      fontFamily: 'sans-serif',
+      minHeight: '100vh', background: '#f1f5f9',
+      padding: '20px', fontFamily: 'sans-serif',
     }}>
 
-      {/* 상단 */}
       <div style={{
-        maxWidth: '900px',
-        margin: '0 auto 20px',
-        display: 'flex',
-        gap: '10px',
+        maxWidth: '900px', margin: '0 auto 20px',
+        display: 'flex', gap: '10px',
       }}>
         <Link href="/admin" style={{
           background: '#1a2744', color: 'white',
           padding: '10px 20px', borderRadius: '10px',
           textDecoration: 'none', fontWeight: 'bold', fontSize: '14px',
-        }}>
-          ← 관리자
-        </Link>
+        }}>← 관리자</Link>
         <Link href="/admin/compatibility" style={{
           background: '#ec4899', color: 'white',
           padding: '10px 20px', borderRadius: '10px',
           textDecoration: 'none', fontWeight: 'bold', fontSize: '14px',
-        }}>
-          ☯️ 새 궁합
-        </Link>
-        <button
-          onClick={() => window.print()}
-          style={{
-            background: '#2d6a4f', color: 'white',
-            padding: '10px 20px', borderRadius: '10px',
-            border: 'none', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer',
-          }}
-        >
-          🖨️ 인쇄/PDF
-        </button>
+        }}>☯️ 새 궁합</Link>
+        <button onClick={() => window.print()} style={{
+          background: '#2d6a4f', color: 'white',
+          padding: '10px 20px', borderRadius: '10px',
+          border: 'none', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer',
+        }}>🖨️ 인쇄/PDF</button>
       </div>
 
       {/* 두 사람 카드 */}
@@ -116,78 +102,57 @@ export default function CompatibilityResultPage() {
       }}>
         <div style={{
           background: 'linear-gradient(135deg, #3b82f6, #1e40af)',
-          color: 'white',
-          padding: '20px',
-          borderRadius: '16px',
+          color: 'white', padding: '20px', borderRadius: '16px',
         }}>
           <h3 style={{ margin: '0 0 8px', fontSize: '18px' }}>
             {data.person1_gender === 'male' ? '👨' : '👩'} {data.person1_name}
           </h3>
           <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)' }}>
-            <div>🎂 {data.person1_birth_date}</div>
+            <div>🎂 {data.person1_birth_date} ({p1Calendar})</div>
             <div>⏰ {data.person1_birth_time}</div>
             <div>📍 {data.person1_birth_city}</div>
           </div>
         </div>
 
-        <div style={{
-          textAlign: 'center',
-          fontSize: '40px',
-        }}>
-          ☯️
-        </div>
+        <div style={{ textAlign: 'center', fontSize: '40px' }}>☯️</div>
 
         <div style={{
           background: 'linear-gradient(135deg, #ec4899, #be185d)',
-          color: 'white',
-          padding: '20px',
-          borderRadius: '16px',
+          color: 'white', padding: '20px', borderRadius: '16px',
         }}>
           <h3 style={{ margin: '0 0 8px', fontSize: '18px' }}>
             {data.person2_gender === 'male' ? '👨' : '👩'} {data.person2_name}
           </h3>
           <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)' }}>
-            <div>🎂 {data.person2_birth_date}</div>
+            <div>🎂 {data.person2_birth_date} ({p2Calendar})</div>
             <div>⏰ {data.person2_birth_time}</div>
             <div>📍 {data.person2_birth_city}</div>
           </div>
         </div>
       </div>
 
-      {/* 관계 정보 */}
       <div style={{
-        background: '#1a2744',
-        color: 'white',
-        padding: '16px',
-        borderRadius: '12px',
-        maxWidth: '900px',
-        margin: '0 auto 20px',
-        textAlign: 'center',
+        background: '#1a2744', color: 'white', padding: '16px',
+        borderRadius: '12px', maxWidth: '900px',
+        margin: '0 auto 20px', textAlign: 'center',
       }}>
         <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
           관계: {RELATIONSHIP_KO[data.relationship_type]}
         </span>
         {data.question && (
           <div style={{
-            marginTop: '10px',
-            fontSize: '13px',
-            color: '#93c5fd',
+            marginTop: '10px', fontSize: '13px', color: '#93c5fd',
           }}>
             💬 {data.question}
           </div>
         )}
       </div>
 
-      {/* 보고서 */}
       <div style={{
-        background: 'white',
-        borderRadius: '16px',
-        padding: '32px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        lineHeight: '1.8',
-        fontSize: '16px',
-        maxWidth: '900px',
-        margin: '0 auto 40px',
+        background: 'white', borderRadius: '16px',
+        padding: '32px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+        lineHeight: '1.8', fontSize: '16px',
+        maxWidth: '900px', margin: '0 auto 40px',
       }}>
         <div dangerouslySetInnerHTML={{ __html: data.report_html }} />
       </div>

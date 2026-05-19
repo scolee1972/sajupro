@@ -140,7 +140,7 @@ export default function AdminPage() {
         <StatCard icon="☯️" label="궁합 상담" value={stats.compatibility} unit="건" color="#ec4899" />
       </div>
 
-      {/* 메뉴 */}
+      {/* 메뉴 (순서: 새 상담 → 고객 목록 → 캘린더 → 궁합 → 궁합 이력) */}
       <div style={{
         maxWidth: '900px',
         margin: '0 auto',
@@ -158,6 +158,14 @@ export default function AdminPage() {
         />
 
         <MenuCard
+          href="/admin/list"
+          icon="📋"
+          title="고객 목록"
+          desc="전체 고객 및 추가 질의"
+          color="#2d6a4f"
+        />
+
+        <MenuCard
           href="/admin/calendar"
           icon="📅"
           title="예약 캘린더"
@@ -171,14 +179,6 @@ export default function AdminPage() {
           title="궁합 분석"
           desc="부부·연인·동료 궁합 보기"
           color="#ec4899"
-        />
-
-        <MenuCard
-          href="/admin/list"
-          icon="📋"
-          title="고객 목록"
-          desc="전체 고객 및 추가 질의"
-          color="#2d6a4f"
         />
 
         <MenuCard
