@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 import { getSajuText, calculateSaju } from '@/lib/saju'
 
+// Vercel 함수 시간 제한 늘리기
+export const maxDuration = 300
+
 const CATEGORY_KO: Record<string, string> = {
   general: '종합 운세', love: '연애/애정', career: '직장/이직',
   business: '사업/창업', investment: '투자/재테크', study: '학업/진로',
@@ -25,13 +28,9 @@ HTML 형식 가이드:
 - 강조: strong 태그 (color:#c9a84c)
 - 박스: div 태그 (background:#f8f5ef, border-left:5px solid #c9a84c, padding:20px, border-radius:10px, line-height:2)
 
-가독성 규칙:
-1. 모든 단락은 p 태그로 감싸기
-2. 한 단락은 3~5문장 이내
-
-출력 규칙 (필수):
+출력 규칙:
 - HTML만 출력
-- 마크다운 코드블록 절대 금지
+- 마크다운 코드블록 금지
 - 바로 h2부터 시작
 `
 
@@ -71,7 +70,6 @@ export async function POST(request: NextRequest) {
     const dayFull = saju.day.full
     const hourFull = saju.hour.full
 
-    // 기간 자동 계산
     let durationInfo = ''
     if (majorEvents) {
       const startMatches = [...majorEvents.matchAll(/(\d{4})년[^,\n]*?(?:입사|시작|결혼|이사)/g)]
@@ -85,23 +83,22 @@ export async function POST(request: NextRequest) {
     }
 
     const verificationInfo = `
-[과거 검증을 위한 실제 정보]
+[과거 검증 정보]
 ${familyInfo ? `- 가족: ${familyInfo}` : ''}
 ${marriageDate ? `- 결혼일: ${marriageDate}` : ''}
 ${divorceDate ? `- 이혼/사별일: ${divorceDate}` : ''}
-${spouseBirth ? `- 배우자 생년월일: ${spouseBirth}` : ''}
-${childrenInfo ? `- 자녀 정보: ${childrenInfo}` : ''}
-${majorEvents ? `- 주요 인생 사건:\n${majorEvents}${durationInfo}
+${spouseBirth ? `- 배우자: ${spouseBirth}` : ''}
+${childrenInfo ? `- 자녀: ${childrenInfo}` : ''}
+${majorEvents ? `- 주요 사건:\n${majorEvents}${durationInfo}
 
-⚠️ 기간 계산 시 반드시 "종료년 - 시작년 + 1" 공식 사용
-   예: 1999년 입사 ~ 2015년 퇴사 = 17년 근무 (2015 - 1999 + 1 = 17)
-   ⚠️ 모든 장에서 동일하게 일관되게 계산할 것!` : ''}
+⚠️ 기간 계산: "종료년 - 시작년 + 1" 공식 사용
+   예: 1999년 입사 ~ 2015년 퇴사 = 17년 근무` : ''}
 
 [현재 거주지]
-${address ? `- 현재 주소: ${address}` : ''}
-⚠️ 이사/여행 방위 추천 시 출생지가 아닌 현재 주소(${address || '미입력'}) 기준으로 판단
+${address ? `- 주소: ${address}` : ''}
+⚠️ 이사/여행 방위 = 현재 주소(${address || '미입력'}) 기준
 
-[건강 정보]
+[건강]
 ${bodyType ? `- 실제 체형: ${bodyType}` : ''}
 ${healthStatus ? `- 현재 건강: ${healthStatus}` : ''}
 `.trim()
@@ -110,7 +107,7 @@ ${healthStatus ? `- 현재 건강: ${healthStatus}` : ''}
 [고객 정보]
 - 이름: ${name}
 - 성별: ${gender === 'male' ? '남성' : '여성'}
-- 만 나이: ${age}세 (${birthYear}년생)
+- 만 ${age}세 (${birthYear}년생)
 - 생년월일: ${birthDate} (${calendarLabel})
 - 출생시각: ${birthTime}
 - 출생지: ${birthCity}${birthCountry && birthCountry !== '대한민국' ? ` (${birthCountry})` : ''}
@@ -125,250 +122,180 @@ ${verificationInfo}
 
 ${sajuText}
 
-⭐ 일간(日干) = ${dayMaster}
+⭐ 일간 = ${dayMaster}
 `
 
+    // ========== Part 1: 사주 원국 + 과거 + 육친 ==========
     const prompt1 = `당신은 자평명리학 40년 경력의 최고 전문 상담사입니다.
 
 ${commonInfo}
 
+다음 3개 장을 모두 작성하세요. 절대 끊지 말 것!
+
 [제1장: 사주 원국 총론]
 - 사주 원국 표
-- 일간 ${dayMaster}의 본질적 성격과 기질 (5문단 이상)
-- 사주의 전체적인 구조와 특징
+- 일간 ${dayMaster}의 성격과 기질 (5문단 이상)
+- 사주 구조와 특징
 - 타고난 강점 5가지
 
 [제2장: 과거 시기 검증]
+${majorEvents ? `⚠️ 실제 사건: ${majorEvents}\n위 사건을 대운/세운과 연결하여 해석!` : ''}
 
-${majorEvents ? `⚠️ 고객의 실제 인생 사건:\n${majorEvents}\n위 사건들을 사주의 대운/세운과 연결하여 해석하세요.` : ''}
-
-대운/세운으로 추정한 과거 사건 (만 ${age}세 기준):
-
-▶ 유아기~초등학교 (1~12세)
-▶ 중·고등학교 (13~18세)
+만 ${age}세 기준 과거 분석:
+▶ 유아기~초등 (1~12세)
+▶ 중·고등 (13~18세)
 ▶ 20대 (19~29세)
-${age >= 30 ? '▶ 30대 (30~39세)' : ''}
-${age >= 40 ? '▶ 40대 (40~49세)' : ''}
-${age >= 50 ? '▶ 50대 (50~59세)' : ''}
+${age >= 30 ? '▶ 30대' : ''}
+${age >= 40 ? '▶ 40대' : ''}
+${age >= 50 ? '▶ 50대' : ''}
 
-각 시기마다 구체적 연도와 사건 예측!
+[제3장: 육친 관계 심층 분석]
+각 7문장 이상:
+▶ 년주(${yearFull}): 조상/사회배경
+▶ 월주(${monthFull}): 부모/형제/직장
+▶ 일주(${dayFull}): 본인/배우자
+▶ 시주(${hourFull}): 자녀/말년
 
 ${HTML_GUIDE}
 
-⚠️ 1~2장만 작성!`
+⚠️ 1~3장 모두 완료!`
 
+    // ========== Part 2: 건강 + 격국용신 + 십성 ==========
     const prompt2 = `당신은 자평명리학 40년 경력의 최고 전문 상담사입니다.
 
 ${commonInfo}
 
-[제3장: 육친 관계 심층 분석]
-
-각 관계별 7문장 이상:
-▶ 년주(${yearFull}): 조상운, 사회적 배경
-▶ 월주(${monthFull}): 부모운, 형제운, 직장
-▶ 일주(${dayFull}): 본인, 배우자
-▶ 시주(${hourFull}): 자녀운, 말년운
-
-${HTML_GUIDE}
-
-⚠️ 3장만 작성!`
-
-    const prompt3 = `당신은 자평명리학 40년 경력의 최고 전문 상담사입니다.
-
-${commonInfo}
+다음 3개 장을 모두 작성하세요. 절대 끊지 말 것!
 
 [제4장: 건강·체질 심층 분석]
-
-${bodyType ? `⚠️ 고객 실제 체형: ${bodyType} - 이를 우선 반영하세요!` : ''}
-${healthStatus ? `⚠️ 현재 건강: ${healthStatus}` : ''}
-
+${bodyType ? `⚠️ 실제 체형: ${bodyType} - 우선 반영!` : ''}
 ▶ 오행 체질 분석
 ▶ 장기별 강약
 ▶ 추천 식단 (보강 음식 10가지, 피해야 할 음식 5가지)
 ▶ 추천 운동 5가지
+⚠️ 토 일간이라고 무조건 비만 단정 금지!
 
-⚠️ 토 일간이라고 무조건 비만이라고 단정하지 말 것!
+[제5장: 격국과 용신]
+▶ 격국 판단 (7문장 이상)
+▶ 용신 (색상, 방위, 직업 7가지)
+▶ 기신
+⚠️ 방위 = 현재 주소(${address || '미입력'}) 기준!
+
+[제6장: 십성 분석]
+10가지 십성 모두 분석 (각 4문장 이상):
+비견, 겁재, 식신, 상관, 편재, 정재, 편관, 정관, 편인, 정인
+마지막에 종합 정리 7문장 이상.
 
 ${HTML_GUIDE}
 
-⚠️ 4장만 작성!`
+⚠️ 4~6장 모두 완료! 십성 10개 모두!`
 
+    // ========== Part 3: 대운 + 올해 + 향후 3년 ==========
+    const prompt3 = `당신은 자평명리학 40년 경력의 최고 전문 상담사입니다.
+
+${commonInfo}
+
+다음 3개 장을 모두 작성하세요. 절대 끊지 말 것!
+
+[제7장: 대운 흐름 (현재 및 미래만!)]
+⚠️ 과거 대운은 다루지 말 것!
+▶ 현재 대운 (만 ${age}세) - 15문장 이상
+▶ 다음 대운 (10년 후) - 10문장 이상
+▶ 그 다음 대운 (20년 후) - 8문장 이상
+
+[제8장: ${currentYear}년 올해의 운세]
+▶ ${currentYear}년 세운 분석 (7문장 이상)
+▶ 월별 운세 (${currentMonth}월~12월, 각 5문장 이상)
+▶ 핵심 키워드 3가지
+▶ 해야 할 것 5가지
+▶ 하지 말아야 할 것 3가지
+
+[제9장: ${currentYear + 1}년~${currentYear + 3}년 향후 3년]
+▶ ${currentYear + 1}년 (15문장 이상)
+▶ ${currentYear + 2}년 (15문장 이상)
+▶ ${currentYear + 3}년 (15문장 이상)
+▶ 종합 전략
+
+${HTML_GUIDE}
+
+⚠️ 7~9장 모두 완료!`
+
+    // ========== Part 4: 맞춤 + 로드맵 + 종합 ==========
     const prompt4 = `당신은 자평명리학 40년 경력의 최고 전문 상담사입니다.
 
 ${commonInfo}
 
-[제5장: 격국과 용신]
-
-▶ 격국 판단 (7문장 이상)
-▶ 용신 (5문장 이상) - 색상, 방위, 숫자, 직업 7가지
-▶ 기신 (5문장 이상)
-
-⚠️ 방위 추천 시 현재 주소(${address || '미입력'}) 기준!
-
-${HTML_GUIDE}
-
-⚠️ 5장만 작성!`
-
-    const prompt5 = `당신은 자평명리학 40년 경력의 최고 전문 상담사입니다.
-
-${commonInfo}
-
-[제6장: 십성 분석]
-
-10가지 십성 모두 분석 (각 4문장 이상):
-비견, 겁재, 식신, 상관, 편재, 정재, 편관, 정관, 편인, 정인
-
-마지막에 "십성 종합 정리" 7문장 이상.
-
-${HTML_GUIDE}
-
-⚠️ 6장만 작성! 10개 모두 완료!`
-
-    const prompt6 = `당신은 자평명리학 40년 경력의 최고 전문 상담사입니다.
-
-${commonInfo}
-
-[제7장: 대운 흐름 (현재 및 미래만!)]
-
-⚠️ 과거 대운은 절대 다루지 말 것!
-
-▶ 현재 대운 (만 ${age}세 / ${currentYear}년) - 15문장 이상
-▶ 다음 대운 (10년 후) - 10문장 이상
-▶ 그 다음 대운 (20년 후) - 8문장 이상
-
-${HTML_GUIDE}
-
-⚠️ 7장만 작성!`
-
-    const prompt7 = `당신은 자평명리학 40년 경력의 최고 전문 상담사입니다.
-
-${commonInfo}
-
-[제8장: ${currentYear}년 올해의 운세]
-
-▶ ${currentYear}년 세운 분석 (7문장 이상)
-▶ 월별 운세 (${currentMonth}월~12월, 각 월 5문장 이상)
-▶ 올해 핵심 키워드 3가지
-▶ 올해 해야 할 것 5가지
-▶ 올해 하지 말아야 할 것 3가지
-
-${HTML_GUIDE}
-
-⚠️ 8장만 작성!`
-
-    const prompt8 = `당신은 자평명리학 40년 경력의 최고 전문 상담사입니다.
-
-${commonInfo}
-
-[제9장: ${currentYear + 1}년~${currentYear + 3}년 향후 3년 운세]
-
-▶ ${currentYear + 1}년 운세 (15문장 이상)
-▶ ${currentYear + 2}년 운세 (15문장 이상)
-▶ ${currentYear + 3}년 운세 (15문장 이상)
-▶ 향후 3년 종합 전략
-
-${HTML_GUIDE}
-
-⚠️ 9장만 작성!`
-
-    const prompt9 = `당신은 자평명리학 40년 경력의 최고 전문 상담사입니다.
-
-${commonInfo}
+다음 3개 장을 모두 작성하세요. 절대 끊지 말 것!
 
 [제10장: ${CATEGORY_KO[category] || '종합'} 분야 맞춤 분석]
-
 ▶ 사주에서 본 운
 ▶ 시기별 흐름
 ${question ? `▶ 질문 답변: "${question}"` : '▶ 종합 전략'}
 ▶ 실행 전략 10가지
 ▶ 주의사항 5가지
+(25문장 이상)
 
-(전체 25문장 이상)
-
-${HTML_GUIDE}
-
-⚠️ 10장만 작성!`
-
-    const prompt10 = `당신은 자평명리학 40년 경력의 최고 전문 상담사입니다.
-
-${commonInfo}
-
-[제11장: 인생 로드맵 (현재 ${age}세 이후 미래만!)]
-
-⚠️ 과거는 절대 다루지 마세요!
-
+[제11장: 인생 로드맵 (만 ${age}세 이후 미래만!)]
+⚠️ 과거는 절대 다루지 말 것!
 ${age < 40 ? `
 ▶ 현재 ~ 40대 (10문장 이상)
 ▶ 40대 ~ 50대 (10문장 이상)
 ▶ 50대 ~ 60대 (10문장 이상)
 ▶ 60대 이후 (10문장 이상)
 ` : age < 50 ? `
-▶ 현재 (${age}세) ~ 50대 (10문장 이상)
+▶ 현재 ~ 50대 (10문장 이상)
 ▶ 50대 ~ 60대 (10문장 이상)
 ▶ 60대 ~ 70대 (10문장 이상)
 ▶ 70대 이후 (10문장 이상)
 ` : age < 60 ? `
-▶ 현재 (${age}세) ~ 60대 (10문장 이상)
+▶ 현재 ~ 60대 (10문장 이상)
 ▶ 60대 ~ 70대 (10문장 이상)
 ▶ 70대 ~ 80대 (10문장 이상)
 ▶ 80대 이후 (10문장 이상)
 ` : `
-▶ 현재 (${age}세) ~ 70대 (10문장 이상)
+▶ 현재 ~ 70대 (10문장 이상)
 ▶ 70대 ~ 80대 (10문장 이상)
 ▶ 80대 이후 (10문장 이상)
 `}
 
-${HTML_GUIDE}
-
-⚠️ 11장만 작성!
-⚠️ 12장은 다음에 작성하므로 절대 시작하지 말 것!`
-
-    const prompt11 = `당신은 자평명리학 40년 경력의 최고 전문 상담사입니다.
-
-${commonInfo}
-
 [제12장: 종합 조언과 마무리]
-
-이 장은 보고서의 마지막입니다. 매우 정성스럽게 작성하세요.
-
-▶ 이 사주의 가장 큰 축복 3가지
-- 각 5문장 이상
-
-▶ 가장 주의해야 할 점 3가지
-- 각 5문장 이상
-
+▶ 가장 큰 축복 3가지 (각 5문장 이상)
+▶ 주의해야 할 점 3가지 (각 5문장 이상)
 ▶ 핵심 조언 7가지
-- 각 3문장 이상
-
-▶ 따뜻한 격려와 응원 메시지
-⚠️ 절대 중간에 끊지 말고 끝까지 작성!
-⚠️ 최소 15문장 이상으로 매우 길고 감동적으로!
-⚠️ 고객 이름(${name})을 반드시 언급
-⚠️ 마지막은 강한 응원과 축복으로 마무리!
+▶ 따뜻한 격려 메시지
+⚠️ 절대 끊지 말 것! 15문장 이상!
+⚠️ ${name}님 이름을 반드시 언급!
+⚠️ 강한 응원과 축복으로 마무리!
 
 ${HTML_GUIDE}
 
-⚠️ 12장만 작성! 격려 메시지는 절대 잘리지 않도록 충분히!`
+⚠️ 10~12장 모두 완료! 격려 메시지까지 끝까지!`
 
     const anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY!.trim(),
     })
 
-    const prompts = [prompt1, prompt2, prompt3, prompt4, prompt5, prompt6, prompt7, prompt8, prompt9, prompt10, prompt11]
-    const partNames = ['사주+과거', '육친', '건강', '격국용신', '십성', '대운', '올해', '향후3년', '맞춤', '인생로드맵', '종합조언']
-    const parts: string[] = []
+    const prompts = [prompt1, prompt2, prompt3, prompt4]
+    const partNames = ['사주+과거+육친', '건강+격국+십성', '대운+올해+3년', '맞춤+로드맵+종합']
 
-    for (let i = 0; i < prompts.length; i++) {
-      console.log(`🤖 ${i + 1}/${prompts.length}: ${partNames[i]}`)
-      const m = await anthropic.messages.create({
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 16000,
-        messages: [{ role: 'user', content: prompts[i] }],
+    // 병렬 호출로 시간 단축!
+    console.log('🤖 4개 분석 병렬 시작...')
+    const messages = await Promise.all(
+      prompts.map((prompt, i) => {
+        console.log(`  ${i + 1}/4: ${partNames[i]} 시작`)
+        return anthropic.messages.create({
+          model: 'claude-sonnet-4-5-20250929',
+          max_tokens: 16000,
+          messages: [{ role: 'user', content: prompt }],
+        })
       })
+    )
+
+    const parts = messages.map((m, i) => {
       const part = cleanHtml(m.content[0].type === 'text' ? m.content[0].text : '')
-      parts.push(part)
-      console.log(`✅ ${i + 1}/${prompts.length} 완료, 길이:`, part.length)
-    }
+      console.log(`✅ ${i + 1}/4 완료, 길이:`, part.length)
+      return part
+    })
 
     const reportHtml = parts.join('')
     console.log('✅ 전체 보고서 길이:', reportHtml.length)

@@ -173,7 +173,7 @@ export default function NewConsultation() {
       }}>
         <h1 style={{ margin: 0, fontSize: '20px' }}>🔮 새 상담 입력</h1>
         <p style={{ margin: '6px 0 0', color: '#93c5fd', fontSize: '13px' }}>
-          모든 항목을 입력하면 더 정확한 분석이 가능합니다 (약 7~9분)
+          모든 항목을 입력하면 더 정확한 분석이 가능합니다 (약 2~3분)
         </p>
       </div>
 
@@ -348,7 +348,7 @@ export default function NewConsultation() {
           border: 'none', fontSize: '18px', fontWeight: 'bold',
           cursor: loading ? 'not-allowed' : 'pointer',
         }}>
-          {loading ? '⏳ AI 심층 분석 중... (약 7~9분)' : '🔮 사주 분석 시작'}
+          {loading ? '⏳ AI 심층 분석 중... (약 2~3분)' : '🔮 사주 분석 시작'}
         </button>
 
       </div>
