@@ -199,12 +199,12 @@ ${HTML_GUIDE}
 
 ⚠️ 4~6장 모두 완료! 십성 10개 빠짐없이!`
 
-    // ========== Part 4: 대운 + 올해 + 향후 3년 ==========
+        // ========== Part 4: 대운 + 올해 ==========
     const prompt4 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
 
 ${commonInfo}
 
-다음 3개 장을 모두 작성. 절대 끊지 말 것!
+다음 2개 장을 모두 작성. 절대 끊지 말 것!
 
 [제7장: 대운 흐름 (현재~미래만!)]
 ⚠️ 과거 대운 금지!
@@ -219,15 +219,48 @@ ${commonInfo}
 ▶ 해야 할 것 5가지
 ▶ 하지 말 것 3가지
 
-[제9장: ${currentYear + 1}~${currentYear + 3}년 향후 3년]
-▶ ${currentYear + 1}년 (15문장)
-▶ ${currentYear + 2}년 (15문장)
-▶ ${currentYear + 3}년 (15문장)
-▶ 종합 전략
+${HTML_GUIDE}
+
+⚠️ 7~8장만 완료! 9장은 작성하지 말 것!`
+
+    // ========== Part 4B: 향후 3년 (별도 분리!) ==========
+    const prompt4b = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
+
+${commonInfo}
+
+[제9장: ${currentYear + 1}년~${currentYear + 3}년 향후 3년 운세]
+
+각 년도별로 매우 상세하게 작성하세요. 절대 중간에 끊지 말 것!
+
+▶ ${currentYear + 1}년 운세 전망 (20문장 이상)
+- ${currentYear + 1}년 세운 분석 (천간/지지)
+- 핵심 에너지와 흐름
+- 주요 변화 예측
+- 좋은 분기 / 주의할 분기
+- 월별 핵심 포인트
+- 추천 활동
+- 피해야 할 것
+- 인간관계 흐름
+- 재정 흐름
+- 건강 주의점
+
+▶ ${currentYear + 2}년 운세 전망 (20문장 이상)
+- 위와 동일한 항목으로
+
+▶ ${currentYear + 3}년 운세 전망 (20문장 이상)
+- 위와 동일한 항목으로
+
+▶ 향후 3년 종합 전략 (10문장 이상)
+- 어떤 흐름으로 인생을 운영해야 하는지
+- 중장기 목표 설정 가이드
+- 인간관계 전략
+- 재정/사업 전략
+- 건강 관리 전략
 
 ${HTML_GUIDE}
 
-⚠️ 7~9장 모두 완료!`
+⚠️ 9장만 작성! 3년 모두 끝까지!
+⚠️ 종합 전략까지 반드시 완료!`
 
     // ========== Part 5: 맞춤 + 인생 로드맵 ==========
     const prompt5 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
@@ -303,10 +336,10 @@ ${HTML_GUIDE}
       apiKey: process.env.ANTHROPIC_API_KEY!.trim(),
     })
 
-    const prompts = [prompt1, prompt2, prompt3, prompt4, prompt5, prompt6]
-    const partNames = ['1~2장', '3장 육친', '4~6장', '7~9장', '10~11장', '12장 종합']
+        const prompts = [prompt1, prompt2, prompt3, prompt4, prompt4b, prompt5, prompt6]
+    const partNames = ['1~2장', '3장 육친', '4~6장', '7~8장', '9장 향후3년', '10~11장', '12장 종합']
 
-    console.log('🤖 6개 분석 병렬 시작...')
+    console.log('🤖 7개 분석 병렬 시작...')
     const messages = await Promise.all(
       prompts.map((prompt, i) => {
         console.log(`  ${i + 1}/6: ${partNames[i]} 시작`)

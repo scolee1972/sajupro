@@ -33,11 +33,10 @@ interface Props {
   isAdmin: boolean
 }
 
-// 사주 시각화 HTML 생성 함수
 function generateSajuChartHtml(sajuData: any, customerName: string): string {
   if (!sajuData) return ''
 
-  const STEM_INFO: Record<string, { hanja: string; element: string; color: string; bg: string }> = {
+  const STEM_INFO: Record<string, any> = {
     '갑': { hanja: '甲', element: '목', color: '#22c55e', bg: '#dcfce7' },
     '을': { hanja: '乙', element: '목', color: '#22c55e', bg: '#dcfce7' },
     '병': { hanja: '丙', element: '화', color: '#ef4444', bg: '#fee2e2' },
@@ -50,7 +49,7 @@ function generateSajuChartHtml(sajuData: any, customerName: string): string {
     '계': { hanja: '癸', element: '수', color: '#3b82f6', bg: '#dbeafe' },
   }
 
-  const BRANCH_INFO: Record<string, { hanja: string; element: string; color: string; bg: string }> = {
+  const BRANCH_INFO: Record<string, any> = {
     '자': { hanja: '子', element: '수', color: '#3b82f6', bg: '#dbeafe' },
     '축': { hanja: '丑', element: '토', color: '#f59e0b', bg: '#fef3c7' },
     '인': { hanja: '寅', element: '목', color: '#22c55e', bg: '#dcfce7' },
@@ -65,7 +64,6 @@ function generateSajuChartHtml(sajuData: any, customerName: string): string {
     '해': { hanja: '亥', element: '수', color: '#3b82f6', bg: '#dbeafe' },
   }
 
-  // 오행 카운트
   const elementCount = { 목: 0, 화: 0, 토: 0, 금: 0, 수: 0 }
   ;[sajuData.year, sajuData.month, sajuData.day, sajuData.hour].forEach((p: any) => {
     const stemElem = STEM_INFO[p.stem]?.element
@@ -80,86 +78,89 @@ function generateSajuChartHtml(sajuData: any, customerName: string): string {
     const stemInfo = STEM_INFO[pillar.stem]
     const branchInfo = BRANCH_INFO[pillar.branch]
     return `
-      <div style="flex:1;background:${isMain ? '#fffbeb' : 'white'};border:${isMain ? '3px solid #c9a84c' : '2px solid #e5e7eb'};border-radius:12px;overflow:hidden;position:relative">
-        <div style="background:${isMain ? '#c9a84c' : '#1a2744'};color:white;padding:8px 4px;text-align:center">
-          <div style="font-weight:bold;font-size:13px">${label}</div>
-          <div style="font-size:10px;opacity:0.8;margin-top:2px">${sublabel}</div>
+      <td style="padding:0;width:25%;vertical-align:top">
+        <div style="background:${isMain ? '#fffbeb' : 'white'};border:${isMain ? '2px solid #c9a84c' : '1px solid #e5e7eb'};border-radius:8px;overflow:hidden">
+          <div style="background:${isMain ? '#c9a84c' : '#1a2744'};color:white;padding:6px 4px;text-align:center">
+            <div style="font-weight:bold;font-size:12px">${label}</div>
+            <div style="font-size:9px;opacity:0.8">${sublabel}</div>
+          </div>
+          <div style="background:${stemInfo?.bg || '#f8f5ef'};padding:12px 4px;text-align:center;border-bottom:1px dashed #ddd">
+            <div style="font-size:24px;font-weight:bold;color:${stemInfo?.color || '#1a2744'}">${stemInfo?.hanja || pillar.stem}</div>
+            <div style="font-size:10px;color:#666;margin-top:2px">${pillar.stem}(${stemInfo?.element || ''})</div>
+          </div>
+          <div style="background:${branchInfo?.bg || '#f8f5ef'};padding:12px 4px;text-align:center">
+            <div style="font-size:24px;font-weight:bold;color:${branchInfo?.color || '#1a2744'}">${branchInfo?.hanja || pillar.branch}</div>
+            <div style="font-size:10px;color:#666;margin-top:2px">${pillar.branch}(${branchInfo?.element || ''})</div>
+          </div>
         </div>
-        <div style="background:${stemInfo?.bg || '#f8f5ef'};padding:16px 8px;text-align:center;border-bottom:1px dashed #ddd">
-          <div style="font-size:28px;font-weight:bold;color:${stemInfo?.color || '#1a2744'};line-height:1">${stemInfo?.hanja || pillar.stem}</div>
-          <div style="font-size:11px;color:#666;margin-top:4px">${pillar.stem}(${stemInfo?.element || ''})</div>
-        </div>
-        <div style="background:${branchInfo?.bg || '#f8f5ef'};padding:16px 8px;text-align:center">
-          <div style="font-size:28px;font-weight:bold;color:${branchInfo?.color || '#1a2744'};line-height:1">${branchInfo?.hanja || pillar.branch}</div>
-          <div style="font-size:11px;color:#666;margin-top:4px">${pillar.branch}(${branchInfo?.element || ''})</div>
-        </div>
-        ${isMain ? '<div style="position:absolute;top:5px;right:5px;background:#ef4444;color:white;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:bold">나</div>' : ''}
-      </div>
+      </td>
     `
   }
 
-  // 오행 분포 바
   const elements = [
-    { name: '목(木)', key: '목', color: '#22c55e', icon: '🌳' },
-    { name: '화(火)', key: '화', color: '#ef4444', icon: '🔥' },
-    { name: '토(土)', key: '토', color: '#f59e0b', icon: '🪨' },
-    { name: '금(金)', key: '금', color: '#94a3b8', icon: '⚙️' },
-    { name: '수(水)', key: '수', color: '#3b82f6', icon: '💧' },
+    { name: '목(木)', key: '목', color: '#22c55e' },
+    { name: '화(火)', key: '화', color: '#ef4444' },
+    { name: '토(土)', key: '토', color: '#f59e0b' },
+    { name: '금(金)', key: '금', color: '#94a3b8' },
+    { name: '수(水)', key: '수', color: '#3b82f6' },
   ]
 
   const elementBars = elements.map(elem => {
     const count = elementCount[elem.key as keyof typeof elementCount]
     const percentage = (count / total) * 100
-    const isHigh = count >= 3
-    const isLow = count === 0
+    const status = count >= 3 ? '과다' : count === 0 ? '없음' : '적정'
+    const statusColor = count >= 3 ? '#ef4444' : count === 0 ? '#94a3b8' : '#666'
     return `
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
-        <div style="width:70px;font-size:13px;font-weight:bold;color:${elem.color}">${elem.icon} ${elem.name}</div>
-        <div style="flex:1;background:#f1f5f9;border-radius:8px;height:22px;overflow:hidden;position:relative">
-          <div style="width:${percentage}%;height:100%;background:${elem.color};border-radius:8px"></div>
-          <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;color:${percentage > 30 ? 'white' : '#1a2744'}">${count}/8 (${percentage.toFixed(0)}%)</div>
-        </div>
-        <div style="width:50px;font-size:11px;font-weight:bold;color:${isHigh ? '#ef4444' : isLow ? '#94a3b8' : '#666'}">${isHigh ? '과다' : isLow ? '없음' : '적정'}</div>
-      </div>
+      <tr>
+        <td style="padding:4px 8px;font-size:12px;font-weight:bold;color:${elem.color};width:80px">${elem.name}</td>
+        <td style="padding:4px">
+          <div style="background:#f1f5f9;border-radius:6px;height:18px;position:relative;overflow:hidden">
+            <div style="width:${percentage}%;height:100%;background:${elem.color};border-radius:6px"></div>
+            <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:${percentage > 30 ? 'white' : '#1a2744'}">${count}/8 (${percentage.toFixed(0)}%)</div>
+          </div>
+        </td>
+        <td style="padding:4px 8px;font-size:11px;font-weight:bold;color:${statusColor};width:50px;text-align:center">${status}</td>
+      </tr>
     `
   }).join('')
 
   const dayStemInfo = STEM_INFO[sajuData.dayMaster]
 
-  // 부족한/과다한 오행
   const lacking = Object.entries(elementCount).filter(([, v]) => v === 0).map(([k]) => k).join(', ')
   const overflow = Object.entries(elementCount).filter(([, v]) => v >= 3).map(([k]) => k).join(', ')
 
   return `
-    <div style="background:white;border-radius:16px;padding:24px;margin:20px 0;border:2px solid #e5e7eb;page-break-inside:avoid">
-      <h2 style="margin:0 0 20px;color:#1a2744;font-size:20px;border-bottom:3px solid #c9a84c;padding-bottom:10px">
+    <div style="margin:20px 0;page-break-inside:avoid">
+      <h2 style="color:#1a2744;font-size:20px;border-bottom:2px solid #c9a84c;padding-bottom:10px;margin:0 0 16px">
         🔮 ${customerName}님의 사주 원국 시각화
       </h2>
 
-      <div style="display:flex;gap:8px;margin-bottom:20px">
-        ${renderPillar(sajuData.hour, '시주', '자녀·말년')}
-        ${renderPillar(sajuData.day, '일주', '본인·배우자', true)}
-        ${renderPillar(sajuData.month, '월주', '부모·청년')}
-        ${renderPillar(sajuData.year, '년주', '조상·초년')}
-      </div>
+      <table style="width:100%;border-collapse:separate;border-spacing:4px;margin-bottom:16px">
+        <tr>
+          ${renderPillar(sajuData.hour, '시주', '자녀·말년')}
+          ${renderPillar(sajuData.day, '일주', '본인·배우자', true)}
+          ${renderPillar(sajuData.month, '월주', '부모·청년')}
+          ${renderPillar(sajuData.year, '년주', '조상·초년')}
+        </tr>
+      </table>
 
-      <div style="background:#fffbeb;border:2px solid #c9a84c;border-radius:10px;padding:14px;margin-bottom:20px;text-align:center">
-        <div style="font-size:13px;color:#666;margin-bottom:4px">⭐ 일간(日干) - 본인을 나타냅니다</div>
-        <div style="font-size:22px;font-weight:bold;color:${dayStemInfo?.color || '#1a2744'}">
+      <div style="background:#fffbeb;border:1px solid #c9a84c;border-radius:8px;padding:10px;margin-bottom:16px;text-align:center">
+        <div style="font-size:12px;color:#666;margin-bottom:2px">⭐ 일간(日干) - 본인을 나타냅니다</div>
+        <div style="font-size:18px;font-weight:bold;color:${dayStemInfo?.color || '#1a2744'}">
           ${dayStemInfo?.hanja} (${sajuData.dayMaster}) · ${dayStemInfo?.element}
         </div>
       </div>
 
-      <h3 style="color:#1a2744;font-size:16px;margin-bottom:14px">📊 오행(五行) 분포</h3>
-      ${elementBars}
+      <h3 style="color:#1a2744;font-size:15px;margin:12px 0 8px">📊 오행(五行) 분포</h3>
+      <table style="width:100%;border-collapse:collapse">
+        ${elementBars}
+      </table>
 
-      <div style="background:#f8f5ef;border-left:4px solid #c9a84c;padding:14px;border-radius:8px;font-size:13px;line-height:1.7;margin-top:16px">
+      <div style="background:#f8f5ef;border-left:3px solid #c9a84c;padding:10px;border-radius:6px;font-size:12px;margin-top:12px">
         <strong style="color:#1a2744">💡 오행 균형 진단:</strong>
-        <div style="margin-top:6px;color:#444">
-          ${lacking ? `<div>• <strong style="color:#ef4444">부족한 오행:</strong> ${lacking}</div>` : ''}
-          ${overflow ? `<div>• <strong style="color:#f59e0b">과다한 오행:</strong> ${overflow}</div>` : ''}
-          <div>• <strong>일간 오행:</strong> ${dayStemInfo?.element} (강약은 전체 분석 참고)</div>
-        </div>
+        ${lacking ? `<div>• <strong style="color:#ef4444">부족:</strong> ${lacking}</div>` : ''}
+        ${overflow ? `<div>• <strong style="color:#f59e0b">과다:</strong> ${overflow}</div>` : ''}
+        <div>• <strong>일간 오행:</strong> ${dayStemInfo?.element}</div>
       </div>
     </div>
   `
@@ -197,7 +198,7 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
 
   function handleDownload() {
     if (selected.size === 0 && !includeSajuChart) {
-      alert('최소 1개 챕터 또는 사주 시각화를 선택해주세요')
+      alert('최소 1개 챕터를 선택해주세요')
       return
     }
 
@@ -242,7 +243,6 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
       return
     }
 
-    // 사주 시각화 HTML 생성
     const sajuChartHtml = (includeSajuChart && sajuData) 
       ? generateSajuChartHtml(sajuData, customer?.name || '고객')
       : ''
@@ -256,7 +256,7 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
   <style>
     @page {
       size: A4;
-      margin: 15mm 20mm;
+      margin: 12mm 15mm;
       @top-left { content: ""; }
       @top-center { content: ""; }
       @top-right { content: ""; }
@@ -272,8 +272,8 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
     }
     
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Malgun Gothic', '맑은 고딕', sans-serif;
-      line-height: 1.8;
+      font-family: -apple-system, 'Malgun Gothic', sans-serif;
+      line-height: 1.7;
       color: #333;
       margin: 0;
       padding: 0;
@@ -282,61 +282,66 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
     
     .print-header {
       text-align: center;
-      padding: 30px 0;
-      border-bottom: 3px solid #c9a84c;
-      margin-bottom: 30px;
-      page-break-after: avoid;
+      padding: 16px 0;
+      border-bottom: 2px solid #c9a84c;
+      margin-bottom: 12px;
+    }
+    
+    .print-header .icon {
+      font-size: 32px;
+      margin-bottom: 4px;
     }
     
     .print-header h1 {
       color: #1a2744;
-      font-size: 28px;
-      margin: 0 0 12px;
+      font-size: 22px;
+      margin: 0 0 6px;
       font-weight: bold;
     }
     
     .print-header .date {
       color: #666;
-      font-size: 14px;
+      font-size: 12px;
     }
     
     .print-info {
-      margin-top: 20px;
-      padding: 16px;
+      margin-top: 12px;
+      padding: 10px 14px;
       background: #f8f5ef;
-      border-radius: 10px;
+      border-radius: 8px;
       text-align: left;
-      font-size: 13px;
+      font-size: 12px;
       color: #444;
     }
     
     .print-info div {
-      margin: 4px 0;
+      margin: 2px 0;
     }
     
     h2 {
       color: #1a2744;
-      border-bottom: 3px solid #c9a84c;
-      padding-bottom: 12px;
-      margin-top: 40px;
-      font-size: 22px;
+      border-bottom: 2px solid #c9a84c;
+      padding-bottom: 10px;
+      margin-top: 24px;
+      font-size: 20px;
       page-break-after: avoid;
+      page-break-inside: avoid;
     }
     
     h3 {
       color: #1a2744;
-      border-left: 4px solid #c9a84c;
-      padding-left: 14px;
-      margin-top: 28px;
-      font-size: 18px;
+      border-left: 3px solid #c9a84c;
+      padding-left: 10px;
+      margin-top: 18px;
+      font-size: 16px;
       page-break-after: avoid;
     }
     
     p {
-      line-height: 1.9;
-      margin-bottom: 16px;
+      line-height: 1.8;
+      margin-bottom: 12px;
       color: #333;
-      font-size: 14px;
+      font-size: 13px;
     }
     
     strong {
@@ -345,37 +350,36 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
     }
     
     ul, ol {
-      line-height: 1.9;
-      padding-left: 24px;
-      margin-bottom: 16px;
+      line-height: 1.8;
+      padding-left: 20px;
+      margin-bottom: 12px;
     }
     
     li {
-      margin-bottom: 8px;
-      font-size: 14px;
+      margin-bottom: 5px;
+      font-size: 13px;
     }
     
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 16px 0;
-      page-break-inside: avoid;
+      margin: 12px 0;
     }
     
     th, td {
       border: 1px solid #ddd;
-      padding: 10px;
+      padding: 8px;
       text-align: center;
-      font-size: 13px;
+      font-size: 12px;
     }
     
     .print-footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 2px solid #c9a84c;
+      margin-top: 30px;
+      padding-top: 14px;
+      border-top: 1px solid #c9a84c;
       text-align: center;
       color: #888;
-      font-size: 11px;
+      font-size: 10px;
     }
     
     .print-controls {
@@ -385,7 +389,7 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
       right: 0;
       background: #1a2744;
       color: white;
-      padding: 16px;
+      padding: 14px;
       text-align: center;
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       z-index: 1000;
@@ -395,16 +399,16 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
       background: #c9a84c;
       color: white;
       border: none;
-      padding: 10px 24px;
-      border-radius: 8px;
+      padding: 8px 20px;
+      border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
-      font-size: 15px;
+      font-size: 14px;
       margin: 0 5px;
     }
     
     .content {
-      padding-top: 80px;
+      padding-top: 70px;
     }
     
     @media print {
@@ -414,6 +418,10 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
       
       .content {
         padding-top: 0;
+      }
+      
+      .first-page {
+        page-break-after: auto;
       }
     }
   </style>
@@ -425,19 +433,21 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
   </div>
   
   <div class="content">
-    <div class="print-header">
-      <div style="font-size:50px">🔮</div>
-      <h1>${customer?.name || '고객'}님 사주 분석 보고서</h1>
-      <div class="date">${today} 작성</div>
-      <div class="print-info">
-        <div><strong>📅 생년월일:</strong> ${customer?.birth_date || '-'} ${customer?.birth_time || ''}</div>
-        <div><strong>📍 출생지:</strong> ${customer?.birth_city || '-'}</div>
-        <div><strong>👤 성별:</strong> ${customer?.gender === 'male' ? '남성' : '여성'}</div>
-        ${customer?.family_info ? `<div><strong>👨‍👩‍👧 가족:</strong> ${customer.family_info}</div>` : ''}
+    <div class="first-page">
+      <div class="print-header">
+        <div class="icon">🔮</div>
+        <h1>${customer?.name || '고객'}님 사주 분석 보고서</h1>
+        <div class="date">${today} 작성</div>
+        <div class="print-info">
+          <div><strong>📅 생년월일:</strong> ${customer?.birth_date || '-'} ${customer?.birth_time || ''}</div>
+          <div><strong>📍 출생지:</strong> ${customer?.birth_city || '-'}</div>
+          <div><strong>👤 성별:</strong> ${customer?.gender === 'male' ? '남성' : '여성'}</div>
+          ${customer?.family_info ? `<div><strong>👨‍👩‍👧 가족:</strong> ${customer.family_info}</div>` : ''}
+        </div>
       </div>
+      
+      ${sajuChartHtml}
     </div>
-    
-    ${sajuChartHtml}
     
     ${filteredHtml}
     ${followupsHtml}
@@ -489,7 +499,7 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
               💡 <strong>PDF 저장 방법:</strong><br/>
               1. 챕터 선택 후 "PDF 다운로드" 클릭<br/>
               2. 새 창이 열리면 "PDF로 저장 / 인쇄" 버튼 클릭<br/>
-              3. 인쇄 대화상자에서 <strong>"대상" → "PDF로 저장"</strong> 선택
+              3. 인쇄 대화상자에서 "대상" → "PDF로 저장" 선택
             </div>
 
             {isAdmin && (
@@ -502,7 +512,6 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
               </div>
             )}
 
-            {/* 사주 시각화 옵션 */}
             {sajuData && (
               <label style={{
                 display: 'flex', alignItems: 'center', gap: '10px',
@@ -518,7 +527,7 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
                     🔮 사주 원국 시각화 포함
                   </div>
                   <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
-                    사주표 + 오행 분포 차트 (보고서 맨 앞에 추가)
+                    사주표 + 오행 분포 차트 (첫 페이지에 추가)
                   </div>
                 </div>
               </label>

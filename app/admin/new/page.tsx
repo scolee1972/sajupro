@@ -86,20 +86,27 @@ export default function NewConsultation() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name, gender, phone, email,
-          address: currentAddress,
-          familyInfo, marriageDate, divorceDate, spouseBirth, childrenInfo,
-          majorEvents, bodyType, healthStatus,
-          birthDate,
-          birthTime: String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0'),
-          birthCity, birthCountry,
-          calendarType, leapMonth, category, question,
-        }),
-      })
+      // 5분 타임아웃 설정
+const controller = new AbortController()
+const timeoutId = setTimeout(() => controller.abort(), 300000)
+
+const res = await fetch('/api/analyze', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  signal: controller.signal,
+  body: JSON.stringify({
+    name, gender, phone, email,
+    address: currentAddress,
+    familyInfo, marriageDate, divorceDate, spouseBirth, childrenInfo,
+    majorEvents, bodyType, healthStatus,
+    birthDate,
+    birthTime: String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0'),
+    birthCity, birthCountry,
+    calendarType, leapMonth, category, question,
+  }),
+})
+
+clearTimeout(timeoutId)
 
       const data = await res.json()
 
