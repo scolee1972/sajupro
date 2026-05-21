@@ -127,12 +127,13 @@ export default function CustomerResultPage() {
         }}>🖨️ 인쇄</button>
         {customer && data.report_html && (
           <PdfChapterSelector
-            reportHtml={data.report_html}
-            customer={customer}
-            followups={followups}
-            isPremium={data.premium_paid || false}
-            isAdmin={false}
-          />
+  reportHtml={data.report_html}
+  customer={customer}
+  followups={followups}
+  sajuData={data.saju_data}
+  isPremium={data.premium_paid || false}
+  isAdmin={false}
+/>
         )}
       </div>
 

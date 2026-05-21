@@ -348,7 +348,7 @@ export default function NewConsultation() {
           border: 'none', fontSize: '18px', fontWeight: 'bold',
           cursor: loading ? 'not-allowed' : 'pointer',
         }}>
-          {loading ? '⏳ AI 심층 분석 중... (약 2~3분)' : '🔮 사주 분석 시작'}
+          {loading ? '⏳ AI 심층 분석 중... (약 3~4분)' : '🔮 사주 분석 시작'}
         </button>
 
       </div>

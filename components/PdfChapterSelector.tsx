@@ -18,9 +18,9 @@ const CHAPTERS: Chapter[] = [
   { id: 'ch6', title: '제6장: 십성 분석', description: '10가지 십성 상세 분석', isFree: false },
   { id: 'ch7', title: '제7장: 대운 흐름', description: '현재~미래 대운', isFree: true },
   { id: 'ch8', title: '제8장: 올해의 운세', description: '월별 상세 운세', isFree: true },
-  { id: 'ch9', title: '제9장: 향후 2년 운세', description: '내년~내후년 흐름', isFree: false },
+  { id: 'ch9', title: '제9장: 향후 3년 운세', description: '내년~3년 흐름', isFree: false },
   { id: 'ch10', title: '제10장: 맞춤 분야 분석', description: '관심 분야 심층', isFree: true },
-  { id: 'ch11', title: '제11장: 인생 로드맵', description: '40대~노년 설계', isFree: false },
+  { id: 'ch11', title: '제11장: 인생 로드맵', description: '미래 인생 설계', isFree: false },
   { id: 'ch12', title: '제12장: 종합 조언', description: '핵심 조언과 격려', isFree: true },
 ]
 
@@ -28,17 +28,151 @@ interface Props {
   reportHtml: string
   customer: any
   followups: any[]
+  sajuData?: any
   isPremium: boolean
   isAdmin: boolean
 }
 
-export default function PdfChapterSelector({ reportHtml, customer, followups, isPremium, isAdmin }: Props) {
+// 사주 시각화 HTML 생성 함수
+function generateSajuChartHtml(sajuData: any, customerName: string): string {
+  if (!sajuData) return ''
+
+  const STEM_INFO: Record<string, { hanja: string; element: string; color: string; bg: string }> = {
+    '갑': { hanja: '甲', element: '목', color: '#22c55e', bg: '#dcfce7' },
+    '을': { hanja: '乙', element: '목', color: '#22c55e', bg: '#dcfce7' },
+    '병': { hanja: '丙', element: '화', color: '#ef4444', bg: '#fee2e2' },
+    '정': { hanja: '丁', element: '화', color: '#ef4444', bg: '#fee2e2' },
+    '무': { hanja: '戊', element: '토', color: '#f59e0b', bg: '#fef3c7' },
+    '기': { hanja: '己', element: '토', color: '#f59e0b', bg: '#fef3c7' },
+    '경': { hanja: '庚', element: '금', color: '#94a3b8', bg: '#f1f5f9' },
+    '신': { hanja: '辛', element: '금', color: '#94a3b8', bg: '#f1f5f9' },
+    '임': { hanja: '壬', element: '수', color: '#3b82f6', bg: '#dbeafe' },
+    '계': { hanja: '癸', element: '수', color: '#3b82f6', bg: '#dbeafe' },
+  }
+
+  const BRANCH_INFO: Record<string, { hanja: string; element: string; color: string; bg: string }> = {
+    '자': { hanja: '子', element: '수', color: '#3b82f6', bg: '#dbeafe' },
+    '축': { hanja: '丑', element: '토', color: '#f59e0b', bg: '#fef3c7' },
+    '인': { hanja: '寅', element: '목', color: '#22c55e', bg: '#dcfce7' },
+    '묘': { hanja: '卯', element: '목', color: '#22c55e', bg: '#dcfce7' },
+    '진': { hanja: '辰', element: '토', color: '#f59e0b', bg: '#fef3c7' },
+    '사': { hanja: '巳', element: '화', color: '#ef4444', bg: '#fee2e2' },
+    '오': { hanja: '午', element: '화', color: '#ef4444', bg: '#fee2e2' },
+    '미': { hanja: '未', element: '토', color: '#f59e0b', bg: '#fef3c7' },
+    '신': { hanja: '申', element: '금', color: '#94a3b8', bg: '#f1f5f9' },
+    '유': { hanja: '酉', element: '금', color: '#94a3b8', bg: '#f1f5f9' },
+    '술': { hanja: '戌', element: '토', color: '#f59e0b', bg: '#fef3c7' },
+    '해': { hanja: '亥', element: '수', color: '#3b82f6', bg: '#dbeafe' },
+  }
+
+  // 오행 카운트
+  const elementCount = { 목: 0, 화: 0, 토: 0, 금: 0, 수: 0 }
+  ;[sajuData.year, sajuData.month, sajuData.day, sajuData.hour].forEach((p: any) => {
+    const stemElem = STEM_INFO[p.stem]?.element
+    const branchElem = BRANCH_INFO[p.branch]?.element
+    if (stemElem) elementCount[stemElem as keyof typeof elementCount]++
+    if (branchElem) elementCount[branchElem as keyof typeof elementCount]++
+  })
+
+  const total = 8
+
+  function renderPillar(pillar: any, label: string, sublabel: string, isMain: boolean = false) {
+    const stemInfo = STEM_INFO[pillar.stem]
+    const branchInfo = BRANCH_INFO[pillar.branch]
+    return `
+      <div style="flex:1;background:${isMain ? '#fffbeb' : 'white'};border:${isMain ? '3px solid #c9a84c' : '2px solid #e5e7eb'};border-radius:12px;overflow:hidden;position:relative">
+        <div style="background:${isMain ? '#c9a84c' : '#1a2744'};color:white;padding:8px 4px;text-align:center">
+          <div style="font-weight:bold;font-size:13px">${label}</div>
+          <div style="font-size:10px;opacity:0.8;margin-top:2px">${sublabel}</div>
+        </div>
+        <div style="background:${stemInfo?.bg || '#f8f5ef'};padding:16px 8px;text-align:center;border-bottom:1px dashed #ddd">
+          <div style="font-size:28px;font-weight:bold;color:${stemInfo?.color || '#1a2744'};line-height:1">${stemInfo?.hanja || pillar.stem}</div>
+          <div style="font-size:11px;color:#666;margin-top:4px">${pillar.stem}(${stemInfo?.element || ''})</div>
+        </div>
+        <div style="background:${branchInfo?.bg || '#f8f5ef'};padding:16px 8px;text-align:center">
+          <div style="font-size:28px;font-weight:bold;color:${branchInfo?.color || '#1a2744'};line-height:1">${branchInfo?.hanja || pillar.branch}</div>
+          <div style="font-size:11px;color:#666;margin-top:4px">${pillar.branch}(${branchInfo?.element || ''})</div>
+        </div>
+        ${isMain ? '<div style="position:absolute;top:5px;right:5px;background:#ef4444;color:white;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:bold">나</div>' : ''}
+      </div>
+    `
+  }
+
+  // 오행 분포 바
+  const elements = [
+    { name: '목(木)', key: '목', color: '#22c55e', icon: '🌳' },
+    { name: '화(火)', key: '화', color: '#ef4444', icon: '🔥' },
+    { name: '토(土)', key: '토', color: '#f59e0b', icon: '🪨' },
+    { name: '금(金)', key: '금', color: '#94a3b8', icon: '⚙️' },
+    { name: '수(水)', key: '수', color: '#3b82f6', icon: '💧' },
+  ]
+
+  const elementBars = elements.map(elem => {
+    const count = elementCount[elem.key as keyof typeof elementCount]
+    const percentage = (count / total) * 100
+    const isHigh = count >= 3
+    const isLow = count === 0
+    return `
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <div style="width:70px;font-size:13px;font-weight:bold;color:${elem.color}">${elem.icon} ${elem.name}</div>
+        <div style="flex:1;background:#f1f5f9;border-radius:8px;height:22px;overflow:hidden;position:relative">
+          <div style="width:${percentage}%;height:100%;background:${elem.color};border-radius:8px"></div>
+          <div style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;color:${percentage > 30 ? 'white' : '#1a2744'}">${count}/8 (${percentage.toFixed(0)}%)</div>
+        </div>
+        <div style="width:50px;font-size:11px;font-weight:bold;color:${isHigh ? '#ef4444' : isLow ? '#94a3b8' : '#666'}">${isHigh ? '과다' : isLow ? '없음' : '적정'}</div>
+      </div>
+    `
+  }).join('')
+
+  const dayStemInfo = STEM_INFO[sajuData.dayMaster]
+
+  // 부족한/과다한 오행
+  const lacking = Object.entries(elementCount).filter(([, v]) => v === 0).map(([k]) => k).join(', ')
+  const overflow = Object.entries(elementCount).filter(([, v]) => v >= 3).map(([k]) => k).join(', ')
+
+  return `
+    <div style="background:white;border-radius:16px;padding:24px;margin:20px 0;border:2px solid #e5e7eb;page-break-inside:avoid">
+      <h2 style="margin:0 0 20px;color:#1a2744;font-size:20px;border-bottom:3px solid #c9a84c;padding-bottom:10px">
+        🔮 ${customerName}님의 사주 원국 시각화
+      </h2>
+
+      <div style="display:flex;gap:8px;margin-bottom:20px">
+        ${renderPillar(sajuData.hour, '시주', '자녀·말년')}
+        ${renderPillar(sajuData.day, '일주', '본인·배우자', true)}
+        ${renderPillar(sajuData.month, '월주', '부모·청년')}
+        ${renderPillar(sajuData.year, '년주', '조상·초년')}
+      </div>
+
+      <div style="background:#fffbeb;border:2px solid #c9a84c;border-radius:10px;padding:14px;margin-bottom:20px;text-align:center">
+        <div style="font-size:13px;color:#666;margin-bottom:4px">⭐ 일간(日干) - 본인을 나타냅니다</div>
+        <div style="font-size:22px;font-weight:bold;color:${dayStemInfo?.color || '#1a2744'}">
+          ${dayStemInfo?.hanja} (${sajuData.dayMaster}) · ${dayStemInfo?.element}
+        </div>
+      </div>
+
+      <h3 style="color:#1a2744;font-size:16px;margin-bottom:14px">📊 오행(五行) 분포</h3>
+      ${elementBars}
+
+      <div style="background:#f8f5ef;border-left:4px solid #c9a84c;padding:14px;border-radius:8px;font-size:13px;line-height:1.7;margin-top:16px">
+        <strong style="color:#1a2744">💡 오행 균형 진단:</strong>
+        <div style="margin-top:6px;color:#444">
+          ${lacking ? `<div>• <strong style="color:#ef4444">부족한 오행:</strong> ${lacking}</div>` : ''}
+          ${overflow ? `<div>• <strong style="color:#f59e0b">과다한 오행:</strong> ${overflow}</div>` : ''}
+          <div>• <strong>일간 오행:</strong> ${dayStemInfo?.element} (강약은 전체 분석 참고)</div>
+        </div>
+      </div>
+    </div>
+  `
+}
+
+export default function PdfChapterSelector({ reportHtml, customer, followups, sajuData, isPremium, isAdmin }: Props) {
   const [show, setShow] = useState(false)
   const canSelectAll = isAdmin || isPremium
   const [selected, setSelected] = useState<Set<string>>(
     new Set(CHAPTERS.filter(c => c.isFree || canSelectAll).map(c => c.id))
   )
   const [includeFollowups, setIncludeFollowups] = useState(false)
+  const [includeSajuChart, setIncludeSajuChart] = useState(true)
 
   function toggle(id: string) {
     const ch = CHAPTERS.find(c => c.id === id)
@@ -62,14 +196,13 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
   }
 
   function handleDownload() {
-    if (selected.size === 0) {
-      alert('최소 1개 챕터를 선택해주세요')
+    if (selected.size === 0 && !includeSajuChart) {
+      alert('최소 1개 챕터 또는 사주 시각화를 선택해주세요')
       return
     }
 
     const selectedChapters = Array.from(selected)
     
-    // 보고서 HTML 파싱
     const sections = reportHtml.split(/(?=<h2)/g).filter((s: string) => s.trim().length > 0)
     
     let filteredHtml = ''
@@ -88,7 +221,6 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
       }
     })
 
-    // 추가 질의 포함
     let followupsHtml = ''
     if (includeFollowups && followups.length > 0) {
       followupsHtml += '<h2 style="color:#7c3aed;border-bottom:3px solid #7c3aed;padding-bottom:12px;margin-top:48px;font-size:24px">💬 추가 질의 답변</h2>'
@@ -104,12 +236,16 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
 
     const today = new Date().toLocaleDateString('ko-KR')
     
-    // 새 창에서 인쇄용 페이지 열기
     const printWindow = window.open('', '_blank', 'width=900,height=800')
     if (!printWindow) {
       alert('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.')
       return
     }
+
+    // 사주 시각화 HTML 생성
+    const sajuChartHtml = (includeSajuChart && sajuData) 
+      ? generateSajuChartHtml(sajuData, customer?.name || '고객')
+      : ''
 
     const printHtml = `
 <!DOCTYPE html>
@@ -121,8 +257,6 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
     @page {
       size: A4;
       margin: 15mm 20mm;
-      
-      /* 머리글/바닥글 제거 */
       @top-left { content: ""; }
       @top-center { content: ""; }
       @top-right { content: ""; }
@@ -186,7 +320,6 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
       padding-bottom: 12px;
       margin-top: 40px;
       font-size: 22px;
-      page-break-before: auto;
       page-break-after: avoid;
     }
     
@@ -220,10 +353,6 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
     li {
       margin-bottom: 8px;
       font-size: 14px;
-    }
-    
-    div {
-      page-break-inside: avoid;
     }
     
     table {
@@ -274,16 +403,6 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
       margin: 0 5px;
     }
     
-    .print-controls button:hover {
-      background: #b8973b;
-    }
-    
-    .print-controls .info {
-      display: inline-block;
-      margin-right: 20px;
-      font-size: 14px;
-    }
-    
     .content {
       padding-top: 80px;
     }
@@ -300,7 +419,7 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
   </style>
 </head>
 <body>
-    <div class="print-controls">
+  <div class="print-controls">
     <button onclick="window.print()">📄 PDF로 저장 / 인쇄</button>
     <button onclick="window.close()" style="background:#94a3b8">❌ 닫기</button>
   </div>
@@ -318,22 +437,16 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
       </div>
     </div>
     
+    ${sajuChartHtml}
+    
     ${filteredHtml}
     ${followupsHtml}
     
-        <div class="print-footer">
+    <div class="print-footer">
       본 보고서는 자평명리학을 기반으로 분석한 결과입니다.<br/>
-      참고 자료로 잘 활용하셔서 인생에 좋은 길잡이가 되길 진심으로 응원합니다!.<br/>
-      "운명은 정해진 것이 아니라, 만들어가는 것"
+      절대적이지 않을 수 있으니 참고 자료로만 활용하시기 바랍니다.
     </div>
   </div>
-
-  <script>
-    // 페이지 로드 후 자동으로 인쇄 대화상자 열기 (선택사항)
-    // window.onload = function() {
-    //   setTimeout(() => window.print(), 500);
-    // }
-  </script>
 </body>
 </html>
     `
@@ -376,8 +489,7 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
               💡 <strong>PDF 저장 방법:</strong><br/>
               1. 챕터 선택 후 "PDF 다운로드" 클릭<br/>
               2. 새 창이 열리면 "PDF로 저장 / 인쇄" 버튼 클릭<br/>
-              3. 인쇄 대화상자에서 <strong>"대상" → "PDF로 저장"</strong> 선택<br/>
-              4. "저장" 클릭
+              3. 인쇄 대화상자에서 <strong>"대상" → "PDF로 저장"</strong> 선택
             </div>
 
             {isAdmin && (
@@ -388,6 +500,28 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, is
               }}>
                 👑 관리자 모드: 모든 챕터 선택 가능
               </div>
+            )}
+
+            {/* 사주 시각화 옵션 */}
+            {sajuData && (
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '14px', background: '#fffbeb',
+                border: '2px solid #c9a84c',
+                borderRadius: '10px', cursor: 'pointer', marginBottom: '16px',
+              }}>
+                <input type="checkbox" checked={includeSajuChart}
+                  onChange={e => setIncludeSajuChart(e.target.checked)}
+                  style={{ width: '20px', height: '20px' }} />
+                <div>
+                  <div style={{ fontSize: '15px', color: '#1a2744', fontWeight: 'bold' }}>
+                    🔮 사주 원국 시각화 포함
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+                    사주표 + 오행 분포 차트 (보고서 맨 앞에 추가)
+                  </div>
+                </div>
+              </label>
             )}
 
             <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
