@@ -212,7 +212,7 @@ export default function BookingPage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1a2744 0%, #2d1b4e 100%)',
+      background: 'linear-gradient(135deg, #0f1729 0%, #1a2744 100%)',
       padding: '20px',
       fontFamily: 'sans-serif',
     }}>
