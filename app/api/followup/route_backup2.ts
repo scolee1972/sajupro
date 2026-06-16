@@ -11,30 +11,15 @@ const CATEGORY_KO: Record<string, string> = {
 
 function cleanHtml(html: string): string {
   return html
-    .replace(/```html\s*/gi, '').replace(/```\s*/g, '')
-    .replace(/^\s*<!DOCTYPE.*?>/gi, '').replace(/^\s*<html.*?>/gi, '')
-    .replace(/<\/html>\s*$/gi, '').replace(/^\s*<body.*?>/gi, '')
-    .replace(/<\/body>\s*$/gi, '').trim()
+    .replace(/```html\s*/gi, '')
+    .replace(/```\s*/g, '')
+    .replace(/^\s*<!DOCTYPE.*?>/gi, '')
+    .replace(/^\s*<html.*?>/gi, '')
+    .replace(/<\/html>\s*$/gi, '')
+    .replace(/^\s*<body.*?>/gi, '')
+    .replace(/<\/body>\s*$/gi, '')
+    .trim()
 }
-
-const TONE_GUIDE = `
-[상담 어조 - 격조 있는 단호함]
-
-당신은 30년 경력의 명리학 대가입니다.
-품격을 유지하면서도 핵심을 명확하게 짚으세요.
-
-✅ 권장:
-- "~합니다", "~입니다" (단정적)
-- "반드시 ~하시기 바랍니다"
-- "각별히 ~에 유의하십시오"
-- "이는 명백한 길조입니다"
-
-❌ 지양:
-- "~할 수도 있습니다", "~일 가능성이 있습니다"
-- 모호하거나 너무 부드러운 표현
-
-위험은 단호하게, 좋은 운은 명확하게 강조하세요.
-`
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,15 +41,27 @@ export async function POST(request: NextRequest) {
     const age = currentYear - birthYear
 
     const dayMaster = saju.dayMaster
+    const TONE_GUIDE = `
+[상담 어조 - 매우 중요!]
+당신은 30년 경력 명리학 대가입니다. 신점이나 명인처럼 직설적으로!
 
+❌ 금지: "~할 수도", "~일 가능성", 부드러운 표현
+✅ 사용: "~합니다", "반드시 ~하세요", "절대 ~말라"
+
+- 위험은 강하게 경고!
+- 좋은 운은 강하게 부각!
+- 모호한 표현 절대 금지!
+- 명령형 단정형 적극 사용!
+`
     const prompt = `당신은 자평명리학 30년 경력의 최고 대가입니다.
 
 ${TONE_GUIDE}
+고객의 사주를 바탕으로, 아래 질문에 매우 구체적이고 상세한 답변을 HTML로 작성하세요.
 
 [고객 정보]
 - 이름: ${customer.name}
 - 성별: ${customer.gender === 'male' ? '남성' : '여성'}
-- 만 ${age}세
+- 만 나이: ${age}세
 - 생년월일: ${customer.birth_date}
 - 출생시각: ${customer.birth_time}
 - 출생지: ${customer.birth_city}
@@ -80,28 +77,36 @@ ${sajuText}
 - 고객 질문: ${question}
 
 [답변 작성 규칙]
-1. 질문에 직접 답변 (격조있고 단호하게)
+1. 질문에 직접 답변
 2. 구체적 시기 명시 (연운/월운/주간운)
+   예: "${currentYear}년 8~9월경", "${currentYear + 1}년 3월 둘째 주"
 3. 사주 구조 근거 명시
 4. 실행 가능한 구체적 조언 5가지 이상
 
 [답변 구성]
-■ 핵심 답변 (3~5문장, 단호하게)
+■ 핵심 답변 (3~5문장)
 ■ 사주 분석 근거
-■ 시기별 상세 분석
+■ 시기별 상세 분석 (연운/월운/주간운)
 ■ 실천 전략 5가지 이상
-■ 주의사항 (단호하게)
+■ 주의사항
 ■ 최종 조언
 
-HTML 형식:
-- h3 (color:#1a2744, border-left:3px solid #c9a84c, padding-left:12px, margin-top:24px)
-- p (line-height:1.9, margin-bottom:16px, color:#2d2d2d)
-- strong (color:#8b6914)
-- 박스: div (background:#faf8f3, border-left:4px solid #c9a84c, padding:18px, border-radius:8px)
-- 강조 박스: div (background:#f0f7f4, border-left:4px solid #5b8a72, padding:18px, border-radius:8px)
-- 주의 박스: div (background:#fdf5f1, border-left:4px solid #b8714a, padding:18px, border-radius:8px)
+HTML 형식 가이드:
+- 소제목: h3 태그 (color:#1a2744, border-left:4px solid #c9a84c, padding-left:14px, margin-top:32px, font-size:18px)
+- 단락: p 태그 (line-height:2, margin-bottom:18px, color:#333, font-size:15px)
+- 강조: strong 태그 (color:#c9a84c)
+- 박스: div 태그 (background:#f8f5ef, border-left:5px solid #c9a84c, padding:20px, border-radius:10px, line-height:2)
+- 목록: ul/li 태그
 
-HTML만 출력. 마크다운 금지.`
+가독성 규칙:
+1. 모든 단락은 p 태그로 감싸기
+2. 한 단락은 3~5문장 이내
+
+출력 규칙 (필수):
+- HTML만 출력
+- 마크다운 코드블록 절대 금지
+- DOCTYPE, html, body 태그 금지
+- 바로 h3부터 시작`
 
     const anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY!.trim(),

@@ -17,40 +17,18 @@ function cleanHtml(html: string): string {
     .replace(/<\/body>\s*$/gi, '').trim()
 }
 
-const TONE_GUIDE = `
-[상담 어조 - 격조 있는 단호함]
-
-당신은 30년 경력의 명리학 대가입니다.
-품격을 유지하면서도 핵심을 정확하고 단호하게 짚어주세요.
-
-✅ 권장:
-- "이 관계는 ~한 특성이 명확합니다"
-- "반드시 ~를 유념하시기 바랍니다"
-- "이 시기는 ~에 결정적인 영향을 미칩니다"
-- "장점은 ~이며, 이를 적극 활용하셔야 합니다"
-
-❌ 지양:
-- "~할 수도 있습니다" (모호함)
-- "한번 죽이지 못함" (격 없음)
-
-【중요한 점】
-- 좋은 부분은 명확하게 강조
-- 위험한 부분은 단호하게 경고
-- 전문가의 권위와 품격 유지
-- 두루뭉술한 표현 지양
-`
-
 const HTML_GUIDE = `
-HTML 형식:
-- h2 (color:#1a2744, border-bottom:2px solid #c9a84c, padding-bottom:10px, margin-top:40px, font-size:22px)
-- h3 (color:#1a2744, border-left:3px solid #c9a84c, padding-left:12px, margin-top:24px, font-size:17px)
-- p (line-height:1.9, margin-bottom:16px, color:#2d2d2d, font-size:15px)
-- strong (color:#8b6914, font-weight:bold) - 차분한 골드
-- 일반 박스: div (background:#faf8f3, border-left:4px solid #c9a84c, padding:18px, border-radius:8px)
-- 강조 박스 (좋은 운): div (background:#f0f7f4, border-left:4px solid #5b8a72, padding:18px, border-radius:8px)
-- 주의 박스 (조심): div (background:#fdf5f1, border-left:4px solid #b8714a, padding:18px, border-radius:8px)
+HTML 형식 가이드:
+- 큰제목: h2 태그 (color:#be185d, border-bottom:3px solid #ec4899, padding-bottom:12px, margin-top:48px, font-size:24px)
+- 소제목: h3 태그 (color:#1a2744, border-left:4px solid #ec4899, padding-left:14px, margin-top:32px, font-size:18px)
+- 단락: p 태그 (line-height:2, margin-bottom:18px, color:#333, font-size:15px)
+- 강조: strong 태그 (color:#ec4899)
+- 박스: div 태그 (background:#fdf2f8, border-left:5px solid #ec4899, padding:20px, border-radius:10px, line-height:2)
 
-출력: HTML만. 마크다운 금지. h2부터 시작.
+출력 규칙:
+- HTML만 출력
+- 마크다운 코드블록 금지
+- 바로 h2부터 시작
 `
 
 export async function POST(request: NextRequest) {
@@ -76,9 +54,7 @@ export async function POST(request: NextRequest) {
 [첫 번째 사람: ${person1.name}]
 - 성별: ${person1.gender === 'male' ? '남성' : '여성'}
 - 만 ${p1Age}세
-- 생년월일: ${person1.birth_date} (${person1.calendar === 'lunar' ? '음력' : '양력'})
-- 출생시각: ${person1.birth_time}
-- 출생지: ${person1.birth_city}
+- ${person1.birth_date} ${person1.birth_time} (${person1.birth_city})
 
 ${sajuText1}
 
@@ -87,9 +63,7 @@ ${sajuText1}
 [두 번째 사람: ${person2.name}]
 - 성별: ${person2.gender === 'male' ? '남성' : '여성'}
 - 만 ${p2Age}세
-- 생년월일: ${person2.birth_date} (${person2.calendar === 'lunar' ? '음력' : '양력'})
-- 출생시각: ${person2.birth_time}
-- 출생지: ${person2.birth_city}
+- ${person2.birth_date} ${person2.birth_time} (${person2.birth_city})
 
 ${sajuText2}
 
@@ -100,34 +74,46 @@ ${sajuText2}
 [고객 질문] ${question || '관계 전반에 대한 궁합 분석'}
 `
 
+    // ========== Part 1: 두 사람 분석 + 일간 궁합 ==========
+    const TONE_GUIDE = `
+[상담 어조 - 매우 중요!]
+당신은 30년 경력 명리학 대가입니다. 신점이나 명인처럼 직설적으로!
+
+❌ 금지: "~할 수도", "~일 가능성", 부드러운 표현
+✅ 사용: "~합니다", "반드시 ~하세요", "절대 ~말라"
+
+- 위험한 궁합은 강하게 경고!
+- 좋은 궁합은 강하게 부각!
+- 모호한 표현 절대 금지!
+`
     const prompt1 = `당신은 자평명리학 30년 경력의 최고 궁합 전문 상담사입니다.
+
+${commonInfo}
+const prompt = `당신은 자평명리학 30년 경력의 최고 궁합 전문 상담사입니다.
 
 ${TONE_GUIDE}
 
-${commonInfo}
-
-작성할 내용 (3개 장 모두 완료):
+작성할 내용:
 
 [제1장: 두 사람의 사주 요약]
-- ${person1.name}님 사주 요약 (5문장 이상, 단호하게)
-- ${person2.name}님 사주 요약 (5문장 이상, 단호하게)
+- ${person1.name}님 사주 요약 (5문장 이상)
+- ${person2.name}님 사주 요약 (5문장 이상)
 
 [제2장: 사주 원국 비교]
 - 두 사람의 사주를 표로 비교
-- 핵심 차이점과 공통점 (명확하게)
+- 핵심 차이점과 공통점
 
 [제3장: 일간 궁합 분석 (${p1DayMaster} ↔ ${p2DayMaster})]
 - 일간끼리의 관계 분석 (10문장 이상)
-- 생극 관계 (단호하게 설명)
+- 생극 관계
 - 서로에게 미치는 영향
 
 ${HTML_GUIDE}
 
 ⚠️ 1~3장만 작성!`
 
-    const prompt2 = `당신은 자평명리학 30년 경력의 최고 궁합 전문 상담사입니다.
-
-${TONE_GUIDE}
+    // ========== Part 2: 오행 + 합충형 ==========
+    const prompt2 = `당신은 자평명리학 40년 경력의 최고 궁합 전문 상담사입니다.
 
 ${commonInfo}
 
@@ -139,40 +125,38 @@ ${commonInfo}
 - 과다한 오행의 영향
 
 [제5장: 합·충·형 관계] (10문장 이상)
-- 천간합/지지합
-- 충/형/파/해
-- 실전적 의미 (강하게)
+- 천간합/지지합 분석
+- 충/형/파/해 관계
+- 실전적 의미
 
 ${HTML_GUIDE}
 
-⚠️ 4~5장만!`
+⚠️ 4~5장만 작성!`
 
-    const prompt3 = `당신은 자평명리학 30년 경력의 최고 궁합 전문 상담사입니다.
-
-${TONE_GUIDE}
+    // ========== Part 3: 장점·주의 + 운영전략 ==========
+    const prompt3 = `당신은 자평명리학 40년 경력의 최고 궁합 전문 상담사입니다.
 
 ${commonInfo}
 
 작성할 내용:
 
 [제6장: 관계의 장점 5가지]
-각 장점마다 4문장 이상, 강하게 부각
+각 장점마다 3문장 이상으로 상세히
 
-[제7장: 반드시 주의해야 할 점 3가지]
-각 주의점마다 4문장 이상, 단호하게 경고
+[제7장: 주의해야 할 점 3가지]
+각 주의점마다 3문장 이상으로 상세히
 
 [제8장: ${RELATIONSHIP_KO[relationship]} 관계 운영 전략]
 - 일상 운영 방법 (10문장 이상)
-- 갈등 해결 방법 (구체적으로)
+- 갈등 해결 방법
 - 관계 강화 방법
 
 ${HTML_GUIDE}
 
-⚠️ 6~8장만!`
+⚠️ 6~8장만 작성!`
 
-    const prompt4 = `당신은 자평명리학 30년 경력의 최고 궁합 전문 상담사입니다.
-
-${TONE_GUIDE}
+    // ========== Part 4: 시기별 + 실천조언 + 종합평가 ==========
+    const prompt4 = `당신은 자평명리학 40년 경력의 최고 궁합 전문 상담사입니다.
 
 ${commonInfo}
 
@@ -186,51 +170,59 @@ ${commonInfo}
 
 [제10장: 실천 조언 5가지]
 각 조언마다 4문장 이상으로 구체적으로
+- 무엇을, 언제, 어떻게 해야 하는지
 
 [제11장: 종합 평가]
 - 궁합 점수 (100점 만점)
 - 종합 의견 (10문장 이상)
-- 응원 메시지 (5문장 이상, 따뜻하지만 단호하게)
+- 격려 메시지 (5문장 이상)
 
 ${HTML_GUIDE}
 
-⚠️ 9~11장 모두 완료!`
+⚠️ 9~11장 모두 작성! 절대 끊지 말 것!
+⚠️ 종합 평가까지 완료!`
 
     const anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY!.trim(),
     })
 
-    console.log('🤖 궁합 4개 분석 병렬 시작...')
-    const messages = await Promise.all([
-      anthropic.messages.create({
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 16000,
-        messages: [{ role: 'user', content: prompt1 }],
-      }),
-      anthropic.messages.create({
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 16000,
-        messages: [{ role: 'user', content: prompt2 }],
-      }),
-      anthropic.messages.create({
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 16000,
-        messages: [{ role: 'user', content: prompt3 }],
-      }),
-      anthropic.messages.create({
-        model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 16000,
-        messages: [{ role: 'user', content: prompt4 }],
-      }),
-    ])
-
-    const parts = messages.map((m, i) => {
-      const part = cleanHtml(m.content[0].type === 'text' ? m.content[0].text : '')
-      console.log(`✅ ${i + 1}/4 완료, 길이:`, part.length)
-      return part
+    console.log('🤖 1/4: 사주 + 일간 궁합')
+    const m1 = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 16000,
+      messages: [{ role: 'user', content: prompt1 }],
     })
+    const p1 = cleanHtml(m1.content[0].type === 'text' ? m1.content[0].text : '')
+    console.log('✅ 1/4 완료, 길이:', p1.length)
 
-    const reportHtml = parts.join('')
+    console.log('🤖 2/4: 오행 + 합충형')
+    const m2 = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 16000,
+      messages: [{ role: 'user', content: prompt2 }],
+    })
+    const p2 = cleanHtml(m2.content[0].type === 'text' ? m2.content[0].text : '')
+    console.log('✅ 2/4 완료, 길이:', p2.length)
+
+    console.log('🤖 3/4: 장점/주의/운영')
+    const m3 = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 16000,
+      messages: [{ role: 'user', content: prompt3 }],
+    })
+    const p3 = cleanHtml(m3.content[0].type === 'text' ? m3.content[0].text : '')
+    console.log('✅ 3/4 완료, 길이:', p3.length)
+
+    console.log('🤖 4/4: 시기/조언/종합')
+    const m4 = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 16000,
+      messages: [{ role: 'user', content: prompt4 }],
+    })
+    const p4 = cleanHtml(m4.content[0].type === 'text' ? m4.content[0].text : '')
+    console.log('✅ 4/4 완료, 길이:', p4.length)
+
+    const reportHtml = p1 + p2 + p3 + p4
     console.log('✅ 전체 길이:', reportHtml.length)
 
     const supabase = createClient(
