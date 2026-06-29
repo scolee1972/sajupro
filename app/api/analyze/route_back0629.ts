@@ -19,94 +19,6 @@ function cleanHtml(html: string): string {
     .replace(/<\/body>\s*$/gi, '').trim()
 }
 
-// ========== 사주 자동 분석 함수 ==========
-function analyzeSaju(saju: any) {
-  const STEM_ELEMENT: Record<string, string> = {
-    '갑': '목', '을': '목', '병': '화', '정': '화', '무': '토',
-    '기': '토', '경': '금', '신': '금', '임': '수', '계': '수',
-  }
-  const BRANCH_ELEMENT: Record<string, string> = {
-    '자': '수', '축': '토', '인': '목', '묘': '목', '진': '토', '사': '화',
-    '오': '화', '미': '토', '신': '금', '유': '금', '술': '토', '해': '수',
-  }
-  
-  // 오행 카운트
-  const elements = { 목: 0, 화: 0, 토: 0, 금: 0, 수: 0 }
-  ;[saju.year, saju.month, saju.day, saju.hour].forEach((p: any) => {
-    elements[STEM_ELEMENT[p.stem] as keyof typeof elements]++
-    elements[BRANCH_ELEMENT[p.branch] as keyof typeof elements]++
-  })
-  
-  // 일간 오행
-  const dayElement = STEM_ELEMENT[saju.dayMaster]
-  
-  // 일간 강약 판단 (간단 버전)
-  const sameElement = elements[dayElement as keyof typeof elements]
-  const supportElement = getSupportElement(dayElement)
-  const supportCount = elements[supportElement as keyof typeof elements]
-  const totalSupport = sameElement + supportCount
-  
-  const isStrong = totalSupport >= 4
-  
-  // 용신 판단
-  let yongshin = ''
-  let heeshin = ''
-  let kishin = ''
-  let gushin = ''
-  
-  if (isStrong) {
-    // 신강: 일간을 빼주는 오행이 용신
-    if (dayElement === '목') { yongshin = '금'; heeshin = '토'; kishin = '수'; gushin = '목' }
-    else if (dayElement === '화') { yongshin = '수'; heeshin = '금'; kishin = '목'; gushin = '화' }
-    else if (dayElement === '토') { yongshin = '목'; heeshin = '수'; kishin = '화'; gushin = '토' }
-    else if (dayElement === '금') { yongshin = '화'; heeshin = '목'; kishin = '토'; gushin = '금' }
-    else { yongshin = '토'; heeshin = '화'; kishin = '금'; gushin = '수' }
-  } else {
-    // 신약: 일간을 돕는 오행이 용신
-    if (dayElement === '목') { yongshin = '수'; heeshin = '목'; kishin = '금'; gushin = '토' }
-    else if (dayElement === '화') { yongshin = '목'; heeshin = '화'; kishin = '수'; gushin = '금' }
-    else if (dayElement === '토') { yongshin = '화'; heeshin = '토'; kishin = '목'; gushin = '수' }
-    else if (dayElement === '금') { yongshin = '토'; heeshin = '금'; kishin = '화'; gushin = '목' }
-    else { yongshin = '금'; heeshin = '수'; kishin = '토'; gushin = '화' }
-  }
-  
-  // 색상, 방위, 숫자 매칭
-  const COLOR_MAP: Record<string, string[]> = {
-    '목': ['청록색', '녹색', '연두색'],
-    '화': ['빨간색', '주황색', '분홍색'],
-    '토': ['황색', '갈색', '베이지'],
-    '금': ['흰색', '은색', '회색'],
-    '수': ['검정색', '남색', '파란색'],
-  }
-  const DIRECTION_MAP: Record<string, string> = {
-    '목': '동쪽', '화': '남쪽', '토': '중앙', '금': '서쪽', '수': '북쪽',
-  }
-  const NUMBER_MAP: Record<string, number[]> = {
-    '목': [3, 8], '화': [2, 7], '토': [5, 0], '금': [4, 9], '수': [1, 6],
-  }
-  
-  return {
-    elements,
-    dayElement,
-    isStrong,
-    yongshin,
-    heeshin,
-    kishin,
-    gushin,
-    luckyColors: COLOR_MAP[yongshin] || [],
-    luckyDirection: DIRECTION_MAP[yongshin] || '',
-    luckyNumbers: [...(NUMBER_MAP[yongshin] || []), ...(NUMBER_MAP[heeshin] || [])],
-    avoidNumbers: [...(NUMBER_MAP[kishin] || []), ...(NUMBER_MAP[gushin] || [])],
-  }
-}
-
-function getSupportElement(element: string): string {
-  const map: Record<string, string> = {
-    '목': '수', '화': '목', '토': '화', '금': '토', '수': '금',
-  }
-  return map[element] || ''
-}
-
 const TONE_GUIDE = `
 [상담 어조 가이드]
 
@@ -130,9 +42,47 @@ const TONE_GUIDE = `
 - 너무 부드러운 표현
 
 【⚠️ 매우 중요: 표현 사용 제한】
-- "제 30년 경력으로..." 는 보고서 전체에서 최대 1~2회만!
-- 절대 "내 30년 경험으로..." 사용 금지!
-- 대신: "이 사주의 본질은...", "명백히 드러나는 것은...", "주목해야 할 점은..."
+다음 표현은 보고서 전체에서 최대 1~2회만 사용하세요:
+- "제 30년 경력으로 보건대..."
+- "단언컨대..."
+- "이 사주는 분명히..."
+
+대신 다음과 같은 다양한 권위 표현을 사용하세요:
+- "이 사주의 본질은..."
+- "명백히 드러나는 것은..."
+- "주목해야 할 점은..."
+- "특히 중요한 것은..."
+- "분명한 사실은..."
+
+⚠️ 절대 "내 30년 경험으로..." 같은 표현 사용 금지!
+⚠️ "제 30년 경력으로..." 도 보고서 전체에서 1~2회만!
+`
+
+// ⭐ 매우 중요: 오행과 숫자 매칭 표준
+const NUMBER_GUIDE = `
+[오행별 숫자 표준 - 반드시 준수!]
+
+오행 → 숫자 매칭 (절대 변경 금지):
+- 목(木): 3, 8
+- 화(火): 2, 7
+- 토(土): 5, 0(10)
+- 금(金): 4, 9
+- 수(水): 1, 6
+
+[숫자 추천 원칙]
+1. 용신 오행의 숫자가 가장 길함
+2. 희신 오행의 숫자도 길함
+3. 기신 오행의 숫자는 피해야 함
+4. 구신 오행의 숫자도 피해야 함
+
+예시:
+- 용신이 목(木) → 길한 숫자: 3, 8
+- 희신이 화(火) → 추가 길한 숫자: 2, 7
+- 기신이 토(土) → 피할 숫자: 5, 0
+- 구신이 금(金) → 피할 숫자: 4, 9
+
+⚠️ 모든 장에서 동일한 숫자를 일관되게 추천!
+⚠️ 절대 장마다 다른 숫자를 말하지 말 것!
 `
 
 const HTML_GUIDE = `
@@ -142,8 +92,8 @@ HTML 형식:
 - p (line-height:1.9, margin-bottom:16px, color:#2d2d2d, font-size:15px)
 - strong (color:#8b6914)
 - 일반 박스: div (background:#faf8f3, border-left:4px solid #c9a84c, padding:18px, border-radius:8px)
-- 강조 박스: div (background:#f0f7f4, border-left:4px solid #5b8a72, padding:18px, border-radius:8px)
-- 주의 박스: div (background:#fdf5f1, border-left:4px solid #b8714a, padding:18px, border-radius:8px)
+- 강조 박스 (좋은 운): div (background:#f0f7f4, border-left:4px solid #5b8a72, padding:18px, border-radius:8px)
+- 주의 박스 (조심): div (background:#fdf5f1, border-left:4px solid #b8714a, padding:18px, border-radius:8px)
 
 출력: HTML만. 마크다운 금지. h2부터 시작.
 `
@@ -164,10 +114,6 @@ export async function POST(request: NextRequest) {
     const saju = calculateSaju(birthDate, birthTime, birthCity, calendarType, leapMonth)
     const sajuText = getSajuText(birthDate, birthTime, birthCity, calendarType, leapMonth)
     console.log('🔮 사주:', saju.year.full, saju.month.full, saju.day.full, saju.hour.full)
-
-    // ⭐ 핵심 분석 자동 계산
-    const analysis = analyzeSaju(saju)
-    console.log('🎯 자동 분석:', analysis)
 
     const today = new Date()
     const todayStr = today.toLocaleDateString('ko-KR', {
@@ -209,43 +155,114 @@ ${majorEvents ? `- 주요 사건:\n${majorEvents}${durationInfo}` : ''}
 [건강] ${bodyType ? `체형: ${bodyType}` : ''} ${healthStatus || ''}
 `.trim()
 
-    // ⭐ 핵심 기준 (모든 프롬프트에 자동 주입)
-    const coreReference = `
-[⭐⭐⭐ 절대 준수해야 할 핵심 기준 - 모든 장에서 동일하게 사용!]
+    // ========== ⭐ STEP 1: 핵심 결론 먼저 도출 ==========
+    console.log('🎯 핵심 결론 도출 시작...')
+    
+    const corePrompt = `당신은 자평명리학 30년 경력의 최고 대가입니다.
 
-오행 분포:
-- 목(木): ${analysis.elements.목}개
-- 화(火): ${analysis.elements.화}개
-- 토(土): ${analysis.elements.토}개
-- 금(金): ${analysis.elements.금}개
-- 수(水): ${analysis.elements.수}개
+다음 사주를 분석하여 핵심 결론을 먼저 명확히 정리하세요.
+이 결론은 이후 모든 장에서 일관되게 사용됩니다.
 
-일간 오행: ${analysis.dayElement}
-일간 강약: ${analysis.isStrong ? '신강' : '신약'}
-용신: ${analysis.yongshin}
-희신: ${analysis.heeshin}
-기신: ${analysis.kishin}
-구신: ${analysis.gushin}
+${sajuText}
 
-길한 색상: ${analysis.luckyColors.join(', ')}
-길한 방위: ${analysis.luckyDirection}
-길한 숫자: ${analysis.luckyNumbers.join(', ')}
-피할 숫자: ${analysis.avoidNumbers.join(', ')}
+[고객 정보]
+- 이름: ${name}
+- 성별: ${gender === 'male' ? '남성' : '여성'}
+- 만 ${age}세
+- 거주지: ${address || '미입력'}
+- 상담분야: ${CATEGORY_KO[category] || '종합'}
+- 질문: ${question || '없음'}
 
-⚠️⚠️⚠️ 위 정보를 모든 장에서 동일하게 사용!
-⚠️⚠️⚠️ 절대 다른 용신/숫자/색상/방위 말하지 마세요!
+[과거 검증 정보]
+${verificationInfo}
 
-[오행별 숫자 매칭 표준 - 절대 변경 금지]
+[작성할 핵심 결론 - JSON 형식]
+
+다음 항목을 정확히 분석하여 JSON 형식으로만 출력하세요:
+
+{
+  "격국": "이 사주의 격국 (예: 정관격, 식신격 등)",
+  "용신": "가장 필요한 오행 (목/화/토/금/수 중 하나)",
+  "용신_이유": "왜 이 오행이 용신인지 (3문장)",
+  "희신": "용신을 돕는 오행 (목/화/토/금/수 중 하나)",
+  "기신": "피해야 할 오행 (목/화/토/금/수 중 하나)",
+  "구신": "기신을 돕는 오행 (목/화/토/금/수 중 하나)",
+  "길한_색상": ["용신 오행의 색상 2-3가지"],
+  "길한_방위": "용신 오행의 방위 (동/서/남/북/중앙)",
+  "길한_숫자": [용신 숫자 2개, 희신 숫자 2개],
+  "피할_숫자": [기신 숫자 2개, 구신 숫자 2개],
+  "추천_직업_TOP5": ["순위대로 5개 직업"],
+  "현재_대운": "현재 대운 (예: 갑인 대운)",
+  "현재_대운_핵심": "현재 대운의 핵심 의미 (2문장)",
+  "올해_핵심": "${currentYear}년 핵심 운세 (2문장)",
+  "질문_답변_요지": "${question ? `질문에 대한 핵심 답변 요지 (3문장). 만약 질문에 여러 선택지가 있다면, 우선순위를 명확하게 정해서 표기. 예: 1순위: A, 2순위: B, 3순위: C, 4순위: D` : '종합 운세 핵심 요지 (3문장)'}",
+  "사주의_가장_큰_장점_3가지": ["장점1", "장점2", "장점3"],
+  "사주의_가장_큰_위험_3가지": ["위험1", "위험2", "위험3"]
+}
+
+⚠️ 오행별 숫자 매칭 표준 (절대 준수):
 - 목(木): 3, 8
 - 화(火): 2, 7
 - 토(土): 5, 0
 - 금(金): 4, 9
 - 수(水): 1, 6
 
-[질문 답변 일관성]
-${question ? `⚠️ 고객 질문: "${question}"
-질문에 여러 선택지가 있으면, 모든 장에서 동일한 우선순위로 답하세요.
-한 장에서 정한 순위를 다른 장에서 절대 바꾸지 마세요!` : ''}
+⚠️ JSON만 출력! 다른 설명 금지!
+⚠️ 큰따옴표(") 사용! 작은따옴표 금지!`
+
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY!.trim(),
+    })
+
+    const coreMessage = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: corePrompt }],
+    })
+
+    let coreData: any = {}
+    try {
+      const coreText = coreMessage.content[0].type === 'text' ? coreMessage.content[0].text : '{}'
+      const jsonMatch = coreText.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        coreData = JSON.parse(jsonMatch[0])
+      }
+      console.log('✅ 핵심 결론 도출 완료:', coreData)
+    } catch (e) {
+      console.error('핵심 결론 파싱 실패:', e)
+      coreData = {}
+    }
+
+    // 핵심 결론을 모든 프롬프트에서 사용
+    const coreReference = `
+[⭐⭐⭐ 절대 준수해야 할 핵심 결론 - 모든 장에서 동일하게 사용!]
+
+격국: ${coreData.격국 || '미정'}
+용신: ${coreData.용신 || '미정'}
+용신 이유: ${coreData.용신_이유 || ''}
+희신: ${coreData.희신 || '미정'}
+기신: ${coreData.기신 || '미정'}
+구신: ${coreData.구신 || '미정'}
+
+길한 색상: ${JSON.stringify(coreData.길한_색상 || [])}
+길한 방위: ${coreData.길한_방위 || '미정'}
+길한 숫자: ${JSON.stringify(coreData.길한_숫자 || [])}
+피할 숫자: ${JSON.stringify(coreData.피할_숫자 || [])}
+
+추천 직업 (순위 고정): ${JSON.stringify(coreData.추천_직업_TOP5 || [])}
+
+현재 대운: ${coreData.현재_대운 || '미정'}
+현재 대운 핵심: ${coreData.현재_대운_핵심 || ''}
+올해 핵심: ${coreData.올해_핵심 || ''}
+
+질문 답변 요지: ${coreData.질문_답변_요지 || ''}
+
+사주의 가장 큰 장점: ${JSON.stringify(coreData.사주의_가장_큰_장점_3가지 || [])}
+사주의 가장 큰 위험: ${JSON.stringify(coreData.사주의_가장_큰_위험_3가지 || [])}
+
+⚠️⚠️⚠️ 위 결론을 모든 장에서 동일하게 사용하세요!
+⚠️⚠️⚠️ 절대 장마다 다른 숫자, 다른 색상, 다른 순위를 말하지 마세요!
+⚠️⚠️⚠️ 일관성이 신뢰도의 핵심입니다!
 `
 
     const commonInfo = `
@@ -265,9 +282,12 @@ ${sajuText}
 ${coreReference}
 `
 
+    // ========== Part 1~8 ==========
     const prompt1 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
 
 ${TONE_GUIDE}
+
+${NUMBER_GUIDE}
 
 ${commonInfo}
 
@@ -279,6 +299,8 @@ ${commonInfo}
 - 사주의 전체적인 구조와 특징
 - 타고난 강점 5가지
 - 보완이 필요한 부분 3가지
+
+⚠️ 위 핵심 결론에서 명시한 장점 3가지를 반드시 포함!
 
 [제2장: 과거 시기 검증]
 ${majorEvents ? `⚠️ 실제 사건: ${majorEvents}\n대운/세운과 연결!` : ''}
@@ -320,6 +342,8 @@ ${HTML_GUIDE}
 
 ${TONE_GUIDE}
 
+${NUMBER_GUIDE}
+
 ${commonInfo}
 
 다음 2개 장 모두 작성!
@@ -334,21 +358,22 @@ ${bodyType ? `⚠️ 실제 체형: ${bodyType} - 우선 반영!` : ''}
 ▶ 추천 운동 5가지
 
 [제5장: 격국과 용신]
-⚠️ 위 핵심 기준의 용신/희신/기신/구신을 그대로 사용!
+⚠️ 위 핵심 결론과 100% 일치해야 함!
 
-▶ 격국 판단 (7문장 이상)
+▶ 격국 판단: ${coreData.격국 || '핵심 결론 참조'}
+- 왜 이 격국인지 (7문장 이상)
 
-▶ 용신: ${analysis.yongshin}
-- 왜 이것이 용신인지 (${analysis.isStrong ? '일간이 강하므로 빼주는 오행' : '일간이 약하므로 돕는 오행'})
+▶ 용신: ${coreData.용신 || '핵심 결론 참조'}
+- 왜 이것이 용신인지
 
 ▶ 용신 활용:
-- 길한 색상: ${analysis.luckyColors.join(', ')}
-- 길한 방위: ${analysis.luckyDirection} (현재 거주지 ${address || '미입력'} 기준)
-- 길한 숫자: ${analysis.luckyNumbers.join(', ')}
-- 추천 직업 7가지 (사주에 맞게)
+- 길한 색상: ${JSON.stringify(coreData.길한_색상 || [])}
+- 길한 방위: ${coreData.길한_방위 || ''} (현재 거주지 ${address || '미입력'} 기준)
+- 길한 숫자: ${JSON.stringify(coreData.길한_숫자 || [])}
+- 추천 직업: ${JSON.stringify(coreData.추천_직업_TOP5 || [])}
 
-▶ 기신: ${analysis.kishin}
-- 피해야 할 숫자: ${analysis.avoidNumbers.join(', ')}
+▶ 기신: ${coreData.기신 || ''}
+- 피해야 할 숫자: ${JSON.stringify(coreData.피할_숫자 || [])}
 - 피해야 할 색상/방위
 
 ⚠️ 위 정보를 그대로 사용! 다른 숫자/색상 말하지 말 것!
@@ -383,7 +408,7 @@ ${commonInfo}
 
 ${HTML_GUIDE}
 
-⚠️ 6장만! 10개 + 종합정리!`
+⚠️ 6장만! 10개 + 종합정리 모두!`
 
     const prompt5 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
 
@@ -394,13 +419,17 @@ ${commonInfo}
 다음 2개 장 모두 작성!
 
 [제7장: 대운 흐름 (현재~미래만!)]
-⚠️ 과거 대운 금지!
+⚠️ 현재 대운: ${coreData.현재_대운 || ''}
+⚠️ 현재 대운 핵심: ${coreData.현재_대운_핵심 || ''}
+⚠️ 위 핵심 결론 그대로 사용!
 
 ▶ 현재 대운 (만 ${age}세) - 15문장 이상
 ▶ 다음 대운 (10년 후) - 10문장
 ▶ 그 다음 대운 (20년 후) - 8문장
 
 [제8장: ${currentYear}년 올해의 운세]
+⚠️ 올해 핵심: ${coreData.올해_핵심 || ''}
+
 ▶ 세운 분석 (7문장)
 ▶ 월별 운세 (${currentMonth}~12월, 각 5문장)
 ▶ 핵심 키워드 3가지
@@ -440,14 +469,18 @@ ${commonInfo}
 
 [제10장: ${CATEGORY_KO[category] || '종합'} 맞춤 분석]
 
-${question ? `⚠️ 매우 중요!
-질문: "${question}"
-- 질문에 여러 선택지가 있다면, 우선순위를 명확히 정하세요
-- 한번 정한 순위는 다른 장에서 절대 바꾸지 마세요
-- 1순위, 2순위, 3순위... 명확히 표기` : ''}
+⚠️⚠️⚠️ 매우 중요!
+질문에 대한 핵심 답변 요지:
+${coreData.질문_답변_요지 || ''}
+
+⚠️ 위 핵심 답변과 100% 일치하게 작성!
+⚠️ 우선순위가 정해져 있다면 그 순서를 절대 바꾸지 말 것!
+⚠️ 절대 다른 순위로 말하지 말 것!
+
+${question ? `질문: "${question}"` : ''}
 
 ▶ 사주에서 본 운
-▶ 핵심 답변 (명확하게)
+▶ 핵심 답변 (위 결론 그대로!)
 ▶ 시기별 흐름
 ▶ 실행 전략 10가지
 ▶ 절대 피해야 할 것 5가지
@@ -488,8 +521,16 @@ ${commonInfo}
 
 [제12장: 종합 조언과 마무리]
 
+⚠️ 핵심 결론과 일치:
+- 사주의 장점: ${JSON.stringify(coreData.사주의_가장_큰_장점_3가지 || [])}
+- 사주의 위험: ${JSON.stringify(coreData.사주의_가장_큰_위험_3가지 || [])}
+
 ▶ 이 사주의 가장 큰 축복 3가지 (각 6문장 이상)
+- 위 핵심 결론의 장점 3가지를 그대로 사용!
+
 ▶ 가장 주의해야 할 점 3가지 (각 6문장 이상)
+- 위 핵심 결론의 위험 3가지를 그대로 사용!
+
 ▶ 핵심 조언 7가지 (각 4문장 이상)
 
 ▶ 따뜻한 격려와 응원 메시지
@@ -501,14 +542,10 @@ ${HTML_GUIDE}
 
 ⚠️ 12장만! 끝까지 완성!`
 
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY!.trim(),
-    })
-
     const prompts = [prompt1, prompt2, prompt3, prompt4, prompt5, prompt6, prompt7, prompt8]
     const partNames = ['1~2장', '3장 육친', '4~5장', '6장 십성', '7~8장', '9장 향후3년', '10~11장', '12장 종합']
 
-    console.log('🤖 8개 병렬 호출 시작...')
+    console.log('🤖 8개 분석 병렬 시작...')
     const messages = await Promise.all(
       prompts.map((prompt, i) => {
         console.log(`  ${i + 1}/8: ${partNames[i]} 시작`)
@@ -565,7 +602,7 @@ ${HTML_GUIDE}
         category,
         question: question || '',
         report_html: reportHtml,
-        saju_data: { ...saju, calendarType, leapMonth, analysis },
+        saju_data: { ...saju, calendarType, leapMonth, coreData },
       })
       .select().single()
 
