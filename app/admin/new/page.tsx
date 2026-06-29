@@ -86,9 +86,9 @@ export default function NewConsultation() {
     setLoading(true)
 
     try {
-      // 5분 타임아웃 설정
+      // 10분 타임아웃 설정
 const controller = new AbortController()
-const timeoutId = setTimeout(() => controller.abort(), 300000)
+const timeoutId = setTimeout(() => controller.abort(), 600000)
 
 const res = await fetch('/api/analyze', {
   method: 'POST',
