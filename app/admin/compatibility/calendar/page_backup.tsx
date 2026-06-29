@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'  // ✅ useCallback 추가
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 
@@ -8,24 +8,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
-
-// ✅ any[] 대신 Booking 인터페이스 정의
-interface Booking {
-  id: string
-  booking_date: string
-  booking_time: string
-  customer_name: string
-  customer_phone: string
-  birth_date: string
-  birth_time: string
-  birth_city: string
-  gender: 'male' | 'female'
-  status: string
-  payment_status: string
-  amount: number
-  question?: string
-  consultation_id?: string
-}
 
 const STATUS_COLOR: Record<string, string> = {
   pending: '#f59e0b',
@@ -51,12 +33,15 @@ export default function AdminCalendarPage() {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth() + 1)
-  const [bookings, setBookings] = useState<Booking[]>([])   // ✅ any[] → Booking[]
+  const [bookings, setBookings] = useState<any[]>([])
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)              // ✅ loading 실제 사용
+  const [loading, setLoading] = useState(true)
 
-  // ✅ useCallback으로 감싸서 의존성 문제 해결
-  const loadBookings = useCallback(async () => {
+  useEffect(() => {
+    loadBookings()
+  }, [year, month])
+
+  async function loadBookings() {
     setLoading(true)
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`
     const lastDay = new Date(year, month, 0).getDate()
@@ -71,18 +56,13 @@ export default function AdminCalendarPage() {
 
     setBookings(data || [])
     setLoading(false)
-  }, [year, month])  // ✅ year, month가 바뀔 때만 함수 재생성
-
-  // ✅ 의존성 배열에 loadBookings 추가
-  useEffect(() => {
-    loadBookings()
-  }, [loadBookings])
+  }
 
   // 달력 데이터 생성
   const firstDay = new Date(year, month - 1, 1).getDay()
   const lastDay = new Date(year, month, 0).getDate()
   const days: (number | null)[] = []
-
+  
   for (let i = 0; i < firstDay; i++) days.push(null)
   for (let i = 1; i <= lastDay; i++) days.push(i)
 
@@ -113,28 +93,8 @@ export default function AdminCalendarPage() {
   // 통계
   const totalCount = bookings.length
   const paidCount = bookings.filter(b => b.payment_status === 'paid').length
-  const totalRevenue = bookings
-    .filter(b => b.payment_status === 'paid')
+  const totalRevenue = bookings.filter(b => b.payment_status === 'paid')
     .reduce((sum, b) => sum + (b.amount || 0), 0)
-
-  // ✅ loading 상태 UI에 실제로 사용
-  if (loading) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: '#f1f5f9',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'sans-serif',
-      }}>
-        <div style={{ textAlign: 'center', color: '#1a2744' }}>
-          <div style={{ fontSize: '40px', marginBottom: '16px' }}>📅</div>
-          <div style={{ fontSize: '16px', fontWeight: 'bold' }}>캘린더 불러오는 중...</div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div style={{
@@ -262,9 +222,9 @@ export default function AdminCalendarPage() {
 
             const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
             const dayBookings = getDateBookings(day)
-            const isToday = year === today.getFullYear() &&
-              month === today.getMonth() + 1 &&
-              day === today.getDate()
+            const isToday = year === today.getFullYear() && 
+                           month === today.getMonth() + 1 && 
+                           day === today.getDate()
             const isSelected = selectedDate === dateStr
             const dayOfWeek = (firstDay + day - 1) % 7
 

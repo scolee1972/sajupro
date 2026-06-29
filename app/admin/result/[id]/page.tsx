@@ -32,6 +32,18 @@ export default function ResultPage() {
     if (id) loadAll()
   }, [id])
 
+  // 진행 중이면 5초마다 자동 확인
+  useEffect(() => {
+    if (!data) return
+    if (data.status === 'completed' || data.status === 'failed') return
+    
+    const interval = setInterval(() => {
+      loadAll()
+    }, 5000)
+    
+    return () => clearInterval(interval)
+  }, [data?.status, id])
+
   async function loadAll() {
     setLoading(true)
     const { data: consult } = await supabase
@@ -55,6 +67,109 @@ export default function ResultPage() {
     setLoading(false)
   }
 
+  // 분석 진행 중일 때 로딩 화면
+  if (data && (data.status === 'pending' || data.status === 'processing')) {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#f8f7f2',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '20px', fontFamily: 'sans-serif',
+      }}>
+        <div style={{
+          background: 'white', padding: '40px',
+          borderRadius: '20px', maxWidth: '500px', width: '100%',
+          textAlign: 'center', boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+        }}>
+          <div style={{ fontSize: '60px', marginBottom: '20px' }}>🔮</div>
+          <h2 style={{ color: '#1a2744', marginBottom: '12px', fontSize: '22px' }}>
+            AI 심층 분석 진행 중
+          </h2>
+          <p style={{ color: '#666', marginBottom: '30px', fontSize: '14px' }}>
+            30년 경력의 명리학 대가가 정성껏 분석하고 있습니다<br/>
+            약 3~5분 정도 소요됩니다
+          </p>
+          
+          {/* 진행 바 */}
+          <div style={{
+            background: '#f1f5f9', borderRadius: '12px',
+            height: '14px', overflow: 'hidden', marginBottom: '12px',
+          }}>
+            <div style={{
+              width: `${data.progress || 0}%`,
+              height: '100%',
+              background: 'linear-gradient(135deg, #c9a84c, #d4b86a)',
+              borderRadius: '12px',
+              transition: 'width 0.5s ease',
+            }} />
+          </div>
+          <p style={{ color: '#c9a84c', fontSize: '16px', fontWeight: 'bold' }}>
+            {data.progress || 0}%
+          </p>
+          
+          <div style={{
+            background: '#faf8f3', borderRadius: '10px',
+            padding: '16px', marginTop: '24px', fontSize: '13px',
+            color: '#666', textAlign: 'left',
+          }}>
+            <div style={{ marginBottom: '8px' }}>
+              ✓ 사주 원국 분석
+            </div>
+            <div style={{ marginBottom: '8px' }}>
+              {(data.progress || 0) >= 20 ? '✓' : '○'} 핵심 결론 도출
+            </div>
+            <div style={{ marginBottom: '8px' }}>
+              {(data.progress || 0) >= 40 ? '✓' : '○'} 육친 관계 분석
+            </div>
+            <div style={{ marginBottom: '8px' }}>
+              {(data.progress || 0) >= 60 ? '✓' : '○'} 건강·격국·십성 분석
+            </div>
+            <div style={{ marginBottom: '8px' }}>
+              {(data.progress || 0) >= 80 ? '✓' : '○'} 대운·미래 운세 분석
+            </div>
+            <div>
+              {(data.progress || 0) >= 95 ? '✓' : '○'} 인생 로드맵 작성
+            </div>
+          </div>
+          
+          <p style={{ color: '#999', fontSize: '12px', marginTop: '20px' }}>
+            ⚠️ 이 페이지를 닫지 마세요. 자동으로 결과가 표시됩니다.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // 분석 실패 시
+  if (data && data.status === 'failed') {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#f8f7f2',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '20px', fontFamily: 'sans-serif',
+      }}>
+        <div style={{
+          background: 'white', padding: '40px',
+          borderRadius: '20px', maxWidth: '500px', width: '100%',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: '60px', marginBottom: '20px' }}>⚠️</div>
+          <h2 style={{ color: '#b8714a', marginBottom: '12px' }}>
+            분석 중 오류가 발생했습니다
+          </h2>
+          <p style={{ color: '#666', marginBottom: '24px', fontSize: '14px' }}>
+            다시 시도해 주세요
+          </p>
+          <Link href="/admin/new" style={{
+            display: 'inline-block', padding: '14px 32px',
+            background: '#1a2744', color: 'white',
+            borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold',
+          }}>
+            새 상담 시작
+          </Link>
+        </div>
+      </div>
+    )
+  }
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: '#f1f5f9',

@@ -1,152 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import Anthropic from '@anthropic-ai/sdk'
-import { getSajuText, calculateSaju } from '@/lib/saju'
+import { calculateSaju, getSajuText } from '@/lib/saju'
 
-export const maxDuration = 300
-
-const CATEGORY_KO: Record<string, string> = {
-  general: '종합 운세', love: '연애/애정', career: '직장/이직',
-  business: '사업/창업', investment: '투자/재테크', study: '학업/진로',
-  moving: '이사/방위', family: '가족 관계', compatibility: '궁합',
-}
-
-function cleanHtml(html: string): string {
-  return html
-    .replace(/```html\s*/gi, '').replace(/```\s*/g, '')
-    .replace(/^\s*<!DOCTYPE.*?>/gi, '').replace(/^\s*<html.*?>/gi, '')
-    .replace(/<\/html>\s*$/gi, '').replace(/^\s*<body.*?>/gi, '')
-    .replace(/<\/body>\s*$/gi, '').trim()
-}
-
-// ========== 사주 자동 분석 함수 ==========
-function analyzeSaju(saju: any) {
-  const STEM_ELEMENT: Record<string, string> = {
-    '갑': '목', '을': '목', '병': '화', '정': '화', '무': '토',
-    '기': '토', '경': '금', '신': '금', '임': '수', '계': '수',
-  }
-  const BRANCH_ELEMENT: Record<string, string> = {
-    '자': '수', '축': '토', '인': '목', '묘': '목', '진': '토', '사': '화',
-    '오': '화', '미': '토', '신': '금', '유': '금', '술': '토', '해': '수',
-  }
-  
-  // 오행 카운트
-  const elements = { 목: 0, 화: 0, 토: 0, 금: 0, 수: 0 }
-  ;[saju.year, saju.month, saju.day, saju.hour].forEach((p: any) => {
-    elements[STEM_ELEMENT[p.stem] as keyof typeof elements]++
-    elements[BRANCH_ELEMENT[p.branch] as keyof typeof elements]++
-  })
-  
-  // 일간 오행
-  const dayElement = STEM_ELEMENT[saju.dayMaster]
-  
-  // 일간 강약 판단 (간단 버전)
-  const sameElement = elements[dayElement as keyof typeof elements]
-  const supportElement = getSupportElement(dayElement)
-  const supportCount = elements[supportElement as keyof typeof elements]
-  const totalSupport = sameElement + supportCount
-  
-  const isStrong = totalSupport >= 4
-  
-  // 용신 판단
-  let yongshin = ''
-  let heeshin = ''
-  let kishin = ''
-  let gushin = ''
-  
-  if (isStrong) {
-    // 신강: 일간을 빼주는 오행이 용신
-    if (dayElement === '목') { yongshin = '금'; heeshin = '토'; kishin = '수'; gushin = '목' }
-    else if (dayElement === '화') { yongshin = '수'; heeshin = '금'; kishin = '목'; gushin = '화' }
-    else if (dayElement === '토') { yongshin = '목'; heeshin = '수'; kishin = '화'; gushin = '토' }
-    else if (dayElement === '금') { yongshin = '화'; heeshin = '목'; kishin = '토'; gushin = '금' }
-    else { yongshin = '토'; heeshin = '화'; kishin = '금'; gushin = '수' }
-  } else {
-    // 신약: 일간을 돕는 오행이 용신
-    if (dayElement === '목') { yongshin = '수'; heeshin = '목'; kishin = '금'; gushin = '토' }
-    else if (dayElement === '화') { yongshin = '목'; heeshin = '화'; kishin = '수'; gushin = '금' }
-    else if (dayElement === '토') { yongshin = '화'; heeshin = '토'; kishin = '목'; gushin = '수' }
-    else if (dayElement === '금') { yongshin = '토'; heeshin = '금'; kishin = '화'; gushin = '목' }
-    else { yongshin = '금'; heeshin = '수'; kishin = '토'; gushin = '화' }
-  }
-  
-  // 색상, 방위, 숫자 매칭
-  const COLOR_MAP: Record<string, string[]> = {
-    '목': ['청록색', '녹색', '연두색'],
-    '화': ['빨간색', '주황색', '분홍색'],
-    '토': ['황색', '갈색', '베이지'],
-    '금': ['흰색', '은색', '회색'],
-    '수': ['검정색', '남색', '파란색'],
-  }
-  const DIRECTION_MAP: Record<string, string> = {
-    '목': '동쪽', '화': '남쪽', '토': '중앙', '금': '서쪽', '수': '북쪽',
-  }
-  const NUMBER_MAP: Record<string, number[]> = {
-    '목': [3, 8], '화': [2, 7], '토': [5, 0], '금': [4, 9], '수': [1, 6],
-  }
-  
-  return {
-    elements,
-    dayElement,
-    isStrong,
-    yongshin,
-    heeshin,
-    kishin,
-    gushin,
-    luckyColors: COLOR_MAP[yongshin] || [],
-    luckyDirection: DIRECTION_MAP[yongshin] || '',
-    luckyNumbers: [...(NUMBER_MAP[yongshin] || []), ...(NUMBER_MAP[heeshin] || [])],
-    avoidNumbers: [...(NUMBER_MAP[kishin] || []), ...(NUMBER_MAP[gushin] || [])],
-  }
-}
-
-function getSupportElement(element: string): string {
-  const map: Record<string, string> = {
-    '목': '수', '화': '목', '토': '화', '금': '토', '수': '금',
-  }
-  return map[element] || ''
-}
-
-const TONE_GUIDE = `
-[상담 어조 가이드]
-
-당신은 30년 경력의 명리학 대가입니다.
-조선시대 사대부의 품격과 현대 전문가의 명확함을 함께 갖춘 분입니다.
-
-【핵심 원칙】
-1. 품격을 유지하되 핵심은 단호하게 짚으세요
-2. 좋은 부분은 명확하고 따뜻하게 강조
-3. 위험한 부분은 점잖되 단호하게 경고
-4. 두루뭉술한 표현 지양
-
-✅ 권장 표현:
-- "이 사주는 ~한 특성이 명확합니다"
-- "반드시 ~를 유념하시기 바랍니다"
-- "각별히 ~에 유의하십시오"
-- "이는 명백한 길조입니다"
-
-❌ 지양:
-- "~할 수도 있습니다", "~일 가능성이 있습니다"
-- 너무 부드러운 표현
-
-【⚠️ 매우 중요: 표현 사용 제한】
-- "제 30년 경력으로..." 는 보고서 전체에서 최대 1~2회만!
-- 절대 "내 30년 경험으로..." 사용 금지!
-- 대신: "이 사주의 본질은...", "명백히 드러나는 것은...", "주목해야 할 점은..."
-`
-
-const HTML_GUIDE = `
-HTML 형식:
-- h2 (color:#1a2744, border-bottom:2px solid #c9a84c, padding-bottom:10px, margin-top:40px, font-size:22px)
-- h3 (color:#1a2744, border-left:3px solid #c9a84c, padding-left:12px, margin-top:24px, font-size:17px)
-- p (line-height:1.9, margin-bottom:16px, color:#2d2d2d, font-size:15px)
-- strong (color:#8b6914)
-- 일반 박스: div (background:#faf8f3, border-left:4px solid #c9a84c, padding:18px, border-radius:8px)
-- 강조 박스: div (background:#f0f7f4, border-left:4px solid #5b8a72, padding:18px, border-radius:8px)
-- 주의 박스: div (background:#fdf5f1, border-left:4px solid #b8714a, padding:18px, border-radius:8px)
-
-출력: HTML만. 마크다운 금지. h2부터 시작.
-`
+export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
   try {
@@ -159,381 +15,16 @@ export async function POST(request: NextRequest) {
       calendarType, leapMonth, category, question
     } = body
 
-    console.log('📥 입력:', { name, birthDate, birthTime, birthCity })
+    console.log('📥 입력:', { name, birthDate, birthTime })
 
     const saju = calculateSaju(birthDate, birthTime, birthCity, calendarType, leapMonth)
-    const sajuText = getSajuText(birthDate, birthTime, birthCity, calendarType, leapMonth)
-    console.log('🔮 사주:', saju.year.full, saju.month.full, saju.day.full, saju.hour.full)
-
-    // ⭐ 핵심 분석 자동 계산
-    const analysis = analyzeSaju(saju)
-    console.log('🎯 자동 분석:', analysis)
-
-    const today = new Date()
-    const todayStr = today.toLocaleDateString('ko-KR', {
-      year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
-    })
-    const currentYear = today.getFullYear()
-    const currentMonth = today.getMonth() + 1
-    const birthYear = parseInt(birthDate.split('-')[0])
-    const age = currentYear - birthYear
-
-    const calendarLabel = calendarType === 'lunar'
-      ? '음력' + (leapMonth ? ' (윤달)' : '')
-      : '양력'
-
-    const dayMaster = saju.dayMaster
-    const yearFull = saju.year.full
-    const monthFull = saju.month.full
-    const dayFull = saju.day.full
-    const hourFull = saju.hour.full
-
-    let durationInfo = ''
-    if (majorEvents) {
-      const startMatches = [...majorEvents.matchAll(/(\d{4})년[^,\n]*?(?:입사|시작|결혼|이사)/g)]
-      const endMatches = [...majorEvents.matchAll(/(\d{4})년[^,\n]*?(?:퇴사|이혼|사별|매도|종료)/g)]
-      if (startMatches.length > 0 && endMatches.length > 0) {
-        durationInfo = `\n⚠️ 기간 계산: "종료년 - 시작년 + 1" 공식 사용`
-      }
-    }
-
-    const verificationInfo = `
-[검증 정보]
-${familyInfo ? `- 가족: ${familyInfo}` : ''}
-${marriageDate ? `- 결혼일: ${marriageDate}` : ''}
-${divorceDate ? `- 이혼/사별일: ${divorceDate}` : ''}
-${spouseBirth ? `- 배우자: ${spouseBirth}` : ''}
-${childrenInfo ? `- 자녀: ${childrenInfo}` : ''}
-${majorEvents ? `- 주요 사건:\n${majorEvents}${durationInfo}` : ''}
-[거주지] ${address || '미입력'} (방위 기준)
-[건강] ${bodyType ? `체형: ${bodyType}` : ''} ${healthStatus || ''}
-`.trim()
-
-    // ⭐ 핵심 기준 (모든 프롬프트에 자동 주입)
-    const coreReference = `
-[⭐⭐⭐ 절대 준수해야 할 핵심 기준 - 모든 장에서 동일하게 사용!]
-
-오행 분포:
-- 목(木): ${analysis.elements.목}개
-- 화(火): ${analysis.elements.화}개
-- 토(土): ${analysis.elements.토}개
-- 금(金): ${analysis.elements.금}개
-- 수(水): ${analysis.elements.수}개
-
-일간 오행: ${analysis.dayElement}
-일간 강약: ${analysis.isStrong ? '신강' : '신약'}
-용신: ${analysis.yongshin}
-희신: ${analysis.heeshin}
-기신: ${analysis.kishin}
-구신: ${analysis.gushin}
-
-길한 색상: ${analysis.luckyColors.join(', ')}
-길한 방위: ${analysis.luckyDirection}
-길한 숫자: ${analysis.luckyNumbers.join(', ')}
-피할 숫자: ${analysis.avoidNumbers.join(', ')}
-
-⚠️⚠️⚠️ 위 정보를 모든 장에서 동일하게 사용!
-⚠️⚠️⚠️ 절대 다른 용신/숫자/색상/방위 말하지 마세요!
-
-[오행별 숫자 매칭 표준 - 절대 변경 금지]
-- 목(木): 3, 8
-- 화(火): 2, 7
-- 토(土): 5, 0
-- 금(金): 4, 9
-- 수(水): 1, 6
-
-[질문 답변 일관성]
-${question ? `⚠️ 고객 질문: "${question}"
-질문에 여러 선택지가 있으면, 모든 장에서 동일한 우선순위로 답하세요.
-한 장에서 정한 순위를 다른 장에서 절대 바꾸지 마세요!` : ''}
-`
-
-    const commonInfo = `
-[고객] ${name} / ${gender === 'male' ? '남' : '여'} / 만 ${age}세 (${birthYear}년생)
-[생일] ${birthDate} (${calendarLabel}) ${birthTime}
-[출생지] ${birthCity}${birthCountry && birthCountry !== '대한민국' ? ` (${birthCountry})` : ''}
-[거주지] ${address || '미입력'}
-[상담일] ${todayStr} / ${CATEGORY_KO[category] || '종합'}
-[질문] ${question || '없음'}
-
-${verificationInfo}
-
-${sajuText}
-
-⭐ 일간 = ${dayMaster}
-
-${coreReference}
-`
-
-    const prompt1 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
-
-${TONE_GUIDE}
-
-${commonInfo}
-
-다음 2개 장 모두 작성. 절대 끊지 말 것!
-
-[제1장: 사주 원국 총론]
-- 사주 원국 표
-- 일간 ${dayMaster}의 본질적 성격과 기질 (5문단 이상)
-- 사주의 전체적인 구조와 특징
-- 타고난 강점 5가지
-- 보완이 필요한 부분 3가지
-
-[제2장: 과거 시기 검증]
-${majorEvents ? `⚠️ 실제 사건: ${majorEvents}\n대운/세운과 연결!` : ''}
-
-만 ${age}세 기준:
-▶ 유아기~초등 (1~12세)
-▶ 중·고등 (13~18세)
-▶ 20대 (19~29세)
-${age >= 30 ? '▶ 30대' : ''}
-${age >= 40 ? '▶ 40대' : ''}
-${age >= 50 ? '▶ 50대' : ''}
-
-${HTML_GUIDE}
-
-⚠️ 1~2장만!`
-
-    const prompt2 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
-
-${TONE_GUIDE}
-
-${commonInfo}
-
-[제3장: 육친 관계 심층 분석]
-
-4개 기둥 모두 각 8문장 이상.
-
-▶ 년주(${yearFull}): 조상운/사회배경
-▶ 월주(${monthFull}): 부모운/형제운/직장
-▶ 일주(${dayFull}): 본인/배우자
-▶ 시주(${hourFull}): 자녀운/말년운
-
-마지막에 "육친 관계 종합 정리" 7문장 이상.
-
-${HTML_GUIDE}
-
-⚠️ 3장만!`
-
-    const prompt3 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
-
-${TONE_GUIDE}
-
-${commonInfo}
-
-다음 2개 장 모두 작성!
-
-[제4장: 건강·체질 심층 분석]
-${bodyType ? `⚠️ 실제 체형: ${bodyType} - 우선 반영!` : ''}
-▶ 오행 체질 분석
-▶ 장기별 강약
-▶ 주의 질환
-▶ 추천 식단 (음식 10가지)
-▶ 절대 피해야 할 음식 5가지
-▶ 추천 운동 5가지
-
-[제5장: 격국과 용신]
-⚠️ 위 핵심 기준의 용신/희신/기신/구신을 그대로 사용!
-
-▶ 격국 판단 (7문장 이상)
-
-▶ 용신: ${analysis.yongshin}
-- 왜 이것이 용신인지 (${analysis.isStrong ? '일간이 강하므로 빼주는 오행' : '일간이 약하므로 돕는 오행'})
-
-▶ 용신 활용:
-- 길한 색상: ${analysis.luckyColors.join(', ')}
-- 길한 방위: ${analysis.luckyDirection} (현재 거주지 ${address || '미입력'} 기준)
-- 길한 숫자: ${analysis.luckyNumbers.join(', ')}
-- 추천 직업 7가지 (사주에 맞게)
-
-▶ 기신: ${analysis.kishin}
-- 피해야 할 숫자: ${analysis.avoidNumbers.join(', ')}
-- 피해야 할 색상/방위
-
-⚠️ 위 정보를 그대로 사용! 다른 숫자/색상 말하지 말 것!
-
-${HTML_GUIDE}
-
-⚠️ 4~5장만!`
-
-    const prompt4 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
-
-${TONE_GUIDE}
-
-${commonInfo}
-
-[제6장: 십성 분석]
-
-⚠️ 10개 십성 모두 완료! 절대 끊지 말 것!
-
-각 4~5문장:
-▶ 비견 (比肩)
-▶ 겁재 (劫財)
-▶ 식신 (食神)
-▶ 상관 (傷官)
-▶ 편재 (偏財)
-▶ 정재 (正財)
-▶ 편관 (偏官)
-▶ 정관 (正官)
-▶ 편인 (偏印)
-▶ 정인 (正印)
-
-▶ 십성 종합 정리 (반드시 작성!)
-
-${HTML_GUIDE}
-
-⚠️ 6장만! 10개 + 종합정리!`
-
-    const prompt5 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
-
-${TONE_GUIDE}
-
-${commonInfo}
-
-다음 2개 장 모두 작성!
-
-[제7장: 대운 흐름 (현재~미래만!)]
-⚠️ 과거 대운 금지!
-
-▶ 현재 대운 (만 ${age}세) - 15문장 이상
-▶ 다음 대운 (10년 후) - 10문장
-▶ 그 다음 대운 (20년 후) - 8문장
-
-[제8장: ${currentYear}년 올해의 운세]
-▶ 세운 분석 (7문장)
-▶ 월별 운세 (${currentMonth}~12월, 각 5문장)
-▶ 핵심 키워드 3가지
-▶ 반드시 해야 할 것 5가지
-▶ 절대 하지 말 것 3가지
-
-${HTML_GUIDE}
-
-⚠️ 7~8장만!`
-
-    const prompt6 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
-
-${TONE_GUIDE}
-
-${commonInfo}
-
-[제9장: ${currentYear + 1}~${currentYear + 3}년 향후 3년]
-
-각 년도별 20문장 이상!
-
-▶ ${currentYear + 1}년 운세
-▶ ${currentYear + 2}년 운세
-▶ ${currentYear + 3}년 운세
-▶ 향후 3년 종합 전략
-
-${HTML_GUIDE}
-
-⚠️ 9장만!`
-
-    const prompt7 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
-
-${TONE_GUIDE}
-
-${commonInfo}
-
-다음 2개 장 모두 작성!
-
-[제10장: ${CATEGORY_KO[category] || '종합'} 맞춤 분석]
-
-${question ? `⚠️ 매우 중요!
-질문: "${question}"
-- 질문에 여러 선택지가 있다면, 우선순위를 명확히 정하세요
-- 한번 정한 순위는 다른 장에서 절대 바꾸지 마세요
-- 1순위, 2순위, 3순위... 명확히 표기` : ''}
-
-▶ 사주에서 본 운
-▶ 핵심 답변 (명확하게)
-▶ 시기별 흐름
-▶ 실행 전략 10가지
-▶ 절대 피해야 할 것 5가지
-(25문장 이상)
-
-[제11장: 인생 로드맵 (만 ${age}세 이후 미래만!)]
-⚠️ 과거 금지!
-${age < 40 ? `
-▶ 현재 ~ 40대 (10문장)
-▶ 40대 ~ 50대 (10문장)
-▶ 50대 ~ 60대 (10문장)
-▶ 60대 이후 (10문장)
-` : age < 50 ? `
-▶ 현재 ~ 50대 (10문장)
-▶ 50대 ~ 60대 (10문장)
-▶ 60대 ~ 70대 (10문장)
-▶ 70대 이후 (10문장)
-` : age < 60 ? `
-▶ 현재 ~ 60대 (10문장)
-▶ 60대 ~ 70대 (10문장)
-▶ 70대 ~ 80대 (10문장)
-▶ 80대 이후 (10문장)
-` : `
-▶ 현재 ~ 70대 (10문장)
-▶ 70대 ~ 80대 (10문장)
-▶ 80대 이후 (10문장)
-`}
-
-${HTML_GUIDE}
-
-⚠️ 10~11장만!`
-
-    const prompt8 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
-
-${TONE_GUIDE}
-
-${commonInfo}
-
-[제12장: 종합 조언과 마무리]
-
-▶ 이 사주의 가장 큰 축복 3가지 (각 6문장 이상)
-▶ 가장 주의해야 할 점 3가지 (각 6문장 이상)
-▶ 핵심 조언 7가지 (각 4문장 이상)
-
-▶ 따뜻한 격려와 응원 메시지
-⚠️ 최소 20문장 이상!
-⚠️ ${name}님 이름 여러 번 언급!
-⚠️ "운명을 개척하시기 바랍니다", "축복합니다" 마무리!
-
-${HTML_GUIDE}
-
-⚠️ 12장만! 끝까지 완성!`
-
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY!.trim(),
-    })
-
-    const prompts = [prompt1, prompt2, prompt3, prompt4, prompt5, prompt6, prompt7, prompt8]
-    const partNames = ['1~2장', '3장 육친', '4~5장', '6장 십성', '7~8장', '9장 향후3년', '10~11장', '12장 종합']
-
-    console.log('🤖 8개 병렬 호출 시작...')
-    const messages = await Promise.all(
-      prompts.map((prompt, i) => {
-        console.log(`  ${i + 1}/8: ${partNames[i]} 시작`)
-        return anthropic.messages.create({
-          model: 'claude-sonnet-4-5-20250929',
-          max_tokens: 16000,
-          messages: [{ role: 'user', content: prompt }],
-        })
-      })
-    )
-
-    const parts = messages.map((m, i) => {
-      const part = cleanHtml(m.content[0].type === 'text' ? m.content[0].text : '')
-      console.log(`✅ ${i + 1}/8 완료, 길이:`, part.length)
-      return part
-    })
-
-    const reportHtml = parts.join('')
-    console.log('✅ 전체 보고서 길이:', reportHtml.length)
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
+    // 1. 고객 저장
     const { data: customer, error: custErr } = await supabase
       .from('customers')
       .insert({
@@ -557,6 +48,7 @@ ${HTML_GUIDE}
 
     if (custErr) throw custErr
 
+    // 2. 상담 레코드 생성 (status: pending)
     const { data: consultation, error: consultErr } = await supabase
       .from('consultations')
       .insert({
@@ -564,16 +56,37 @@ ${HTML_GUIDE}
         customer_name: name,
         category,
         question: question || '',
-        report_html: reportHtml,
-        saju_data: { ...saju, calendarType, leapMonth, analysis },
+        report_html: '',
+        saju_data: { ...saju, calendarType, leapMonth },
+        status: 'pending',
+        progress: 0,
       })
       .select().single()
 
     if (consultErr) throw consultErr
 
-    console.log('✅ DB 저장 완료')
+    console.log('✅ 상담 ID 생성:', consultation.id)
 
-    return NextResponse.json({ success: true, consultationId: consultation?.id })
+    // 3. 백그라운드 작업 트리거 (응답 대기 안 함!)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${request.headers.get('host')}`
+    
+    // 백그라운드 작업 시작 (fire and forget)
+    fetch(`${appUrl}/api/analyze-worker`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        consultationId: consultation.id,
+        body,
+        saju,
+      }),
+    }).catch(err => console.error('백그라운드 트리거 오류:', err))
+
+    // 4. 즉시 응답 (사용자가 결과 페이지로 이동)
+    return NextResponse.json({
+      success: true,
+      consultationId: consultation.id,
+      status: 'processing',
+    })
 
   } catch (error) {
     console.error('❌ 오류:', error)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'  // ✅ useCallback 추가
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 
@@ -9,6 +9,15 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
+// ✅ any[] 대신 인터페이스 정의
+interface CompatibilityItem {
+  id: string
+  person1_name: string
+  person2_name: string
+  relationship_type: string
+  created_at: string
+}
+
 const RELATIONSHIP_KO: Record<string, string> = {
   couple: '💕 연인', married: '💍 부부', family: '👨‍👩 가족',
   friend: '🤝 친구', colleague: '💼 직장동료', business: '🚀 사업파트너',
@@ -16,14 +25,11 @@ const RELATIONSHIP_KO: Record<string, string> = {
 }
 
 export default function CompatibilityListPage() {
-  const [list, setList] = useState<any[]>([])
+  const [list, setList] = useState<CompatibilityItem[]>([])  // ✅ any[] → CompatibilityItem[]
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    load()
-  }, [])
-
-  async function load() {
+  // ✅ useCallback으로 감싸서 의존성 문제 해결
+  const load = useCallback(async () => {
     const { data } = await supabase
       .from('compatibility_readings')
       .select('*')
@@ -31,7 +37,12 @@ export default function CompatibilityListPage() {
 
     setList(data || [])
     setLoading(false)
-  }
+  }, [])  // 외부 의존성 없으므로 빈 배열
+
+  // ✅ 의존성 배열에 load 추가
+  useEffect(() => {
+    load()
+  }, [load])
 
   return (
     <div style={{
