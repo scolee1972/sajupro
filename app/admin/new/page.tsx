@@ -29,7 +29,7 @@ export default function NewConsultation() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  // 기본 정보 (모두 필수)
+  // 기본 정보
   const [name, setName] = useState('')
   const [gender, setGender] = useState('male')
   const [phone, setPhone] = useState('')
@@ -51,7 +51,7 @@ export default function NewConsultation() {
   const [birthHour, setBirthHour] = useState('')
   const [birthMinute, setBirthMinute] = useState('')
   const [birthCountry, setBirthCountry] = useState('대한민국')
-  const [birthRegion, setBirthRegion] = useState('한국')  // 일본/중국/미국 등
+  const [birthRegion, setBirthRegion] = useState('한국')
   const [birthCity, setBirthCity] = useState('서울')
   const [calendarType, setCalendarType] = useState('solar')
   const [leapMonth, setLeapMonth] = useState(false)
@@ -72,7 +72,6 @@ export default function NewConsultation() {
   }, [])
 
   const handleSubmit = async () => {
-    // 모든 필수 항목 검증
     if (!name) { alert('이름을 입력해주세요'); return }
     if (!phone) { alert('연락처를 입력해주세요'); return }
     if (!email) { alert('이메일을 입력해주세요'); return }
@@ -87,19 +86,19 @@ export default function NewConsultation() {
 
     try {
       const res = await fetch('/api/analyze', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    name, gender, phone, email,
-    address: currentAddress,
-    familyInfo, marriageDate, divorceDate, spouseBirth, childrenInfo,
-    majorEvents, bodyType, healthStatus,
-    birthDate,
-    birthTime: String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0'),
-    birthCity, birthCountry,
-    calendarType, leapMonth, category, question,
-  }),
-})
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name, gender, phone, email,
+          address: currentAddress,
+          familyInfo, marriageDate, divorceDate, spouseBirth, childrenInfo,
+          majorEvents, bodyType, healthStatus,
+          birthDate,
+          birthTime: String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0'),
+          birthCity, birthCountry,
+          calendarType, leapMonth, category, question,
+        }),
+      })
 
       const data = await res.json()
 
@@ -115,7 +114,6 @@ export default function NewConsultation() {
     }
   }
 
-  // 지역 변경 시 도시 자동 변경
   const handleRegionChange = (region: string) => {
     setBirthRegion(region)
     if (region === '한국') {
@@ -148,7 +146,6 @@ export default function NewConsultation() {
 
   const requiredMark = <span style={{ color: '#ef4444' }}> *</span>
 
-  // 현재 선택된 지역의 도시 목록
   const cityList = birthRegion === '한국'
     ? KOREA_CITIES
     : (FOREIGN_CITIES_BY_COUNTRY[birthRegion] || [])
@@ -173,7 +170,7 @@ export default function NewConsultation() {
       }}>
         <h1 style={{ margin: 0, fontSize: '20px' }}>🔮 새 상담 입력</h1>
         <p style={{ margin: '6px 0 0', color: '#93c5fd', fontSize: '13px' }}>
-          모든 항목을 입력하면 더 정확한 분석이 가능합니다 (약 2~3분)
+          모든 항목을 입력하면 더 정확한 분석이 가능합니다 (약 3~5분)
         </p>
       </div>
 
@@ -261,18 +258,32 @@ export default function NewConsultation() {
             💡 24시간 형식 (모르면 12시 0분)
           </p>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
-            <input type="number" min="0" max="23" placeholder="시" value={birthHour}
+            <input 
+              type="number" 
+              min="0" 
+              max="23" 
+              step="1"
+              placeholder="시" 
+              value={birthHour}
               onChange={e => setBirthHour(e.target.value)}
-              style={{ ...inputStyle, textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }} />
+              style={{ ...inputStyle, textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }} 
+            />
             <span style={{ fontSize: '18px', fontWeight: 'bold' }}>시</span>
-            <input type="number" min="0" max="59" step="1" placeholder="분" value={minute}
-              onChange={(e: any) => setMinute(e.target.value)}
-              style={{ ...inputStyle, textAlign: 'center', fontWeight: 'bold' }} />
+            <input 
+              type="number" 
+              min="0" 
+              max="59" 
+              step="1"
+              placeholder="분" 
+              value={birthMinute}
+              onChange={e => setBirthMinute(e.target.value)}
+              style={{ ...inputStyle, textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }} 
+            />
             <span style={{ fontSize: '18px', fontWeight: 'bold' }}>분</span>
           </div>
         </div>
 
-        {/* 출생 국가/도시 (외국인 지원) */}
+        {/* 출생 국가/도시 */}
         <div style={{ marginBottom: '14px' }}>
           <label style={labelStyle}>출생 지역{requiredMark}</label>
           <select style={inputStyle} value={birthRegion} onChange={e => handleRegionChange(e.target.value)}>
@@ -348,7 +359,7 @@ export default function NewConsultation() {
           border: 'none', fontSize: '18px', fontWeight: 'bold',
           cursor: loading ? 'not-allowed' : 'pointer',
         }}>
-          {loading ? '⏳ AI 심층 분석 중... (약 3~4분)' : '🔮 사주 분석 시작'}
+          {loading ? '⏳ AI 심층 분석 중... (약 3~5분)' : '🔮 사주 분석 시작'}
         </button>
 
       </div>
