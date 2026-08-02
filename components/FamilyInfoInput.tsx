@@ -329,9 +329,9 @@ export default function FamilyInfoInput({ onChange }: Props) {
                 onChange={e => setData({ ...data, spouseHour: e.target.value })}
                 style={numInputStyle} />
               <span style={{ fontSize: '13px' }}>시</span>
-              <input type="number" min="0" max="59" placeholder="분" value={data.spouseMinute}
-                onChange={e => setData({ ...data, spouseMinute: e.target.value })}
-                style={numInputStyle} />
+              <input type="number" min="0" max="59" step="1" placeholder="분" value={minute}
+              onChange={(e: any) => setMinute(e.target.value)}
+              style={{ ...inputStyle, textAlign: 'center', fontWeight: 'bold' }} />
               <span style={{ fontSize: '13px' }}>분</span>
             </div>
           </div>
@@ -398,9 +398,9 @@ export default function FamilyInfoInput({ onChange }: Props) {
                   onChange={e => updateChild(idx, 'hour', e.target.value)}
                   style={numInputStyle} />
                 <span style={{ fontSize: '13px' }}>시</span>
-                <input type="number" min="0" max="59" placeholder="분" value={child.minute}
-                  onChange={e => updateChild(idx, 'minute', e.target.value)}
-                  style={numInputStyle} />
+                <input type="number" min="0" max="59" step="1" placeholder="분" value={minute}
+              onChange={(e: any) => setMinute(e.target.value)}
+              style={{ ...inputStyle, textAlign: 'center', fontWeight: 'bold' }} />
                 <span style={{ fontSize: '13px' }}>분</span>
               </div>
             </div>

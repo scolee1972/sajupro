@@ -265,9 +265,9 @@ export default function NewConsultation() {
               onChange={e => setBirthHour(e.target.value)}
               style={{ ...inputStyle, textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }} />
             <span style={{ fontSize: '18px', fontWeight: 'bold' }}>시</span>
-            <input type="number" min="0" max="59" step="1" placeholder="분" value={minute}
-              onChange={(e: any) => setMinute(e.target.value)}
-              style={{ ...inputStyle, textAlign: 'center', fontWeight: 'bold' }} />
+            <input type="number" min="0" max="59" placeholder="분" value={birthMinute}
+              onChange={e => setBirthMinute(e.target.value)}
+              style={{ ...inputStyle, textAlign: 'center', fontSize: '18px', fontWeight: 'bold' }} />
             <span style={{ fontSize: '18px', fontWeight: 'bold' }}>분</span>
           </div>
         </div>

@@ -60,10 +60,10 @@ export async function POST(request: NextRequest) {
 
     console.log('📥 궁합:', person1.name, person2.name)
 
-    const saju1 = calculateSaju(person1.birth_date, person1.birth_time, person1.birth_city, person1.calendar || 'solar', false)
-    const saju2 = calculateSaju(person2.birth_date, person2.birth_time, person2.birth_city, person2.calendar || 'solar', false)
-    const sajuText1 = getSajuText(person1.birth_date, person1.birth_time, person1.birth_city, person1.calendar || 'solar', false)
-    const sajuText2 = getSajuText(person2.birth_date, person2.birth_time, person2.birth_city, person2.calendar || 'solar', false)
+    const saju1 = calculateSaju(person1.birth_date, person1.birth_time, person1.birth_city, person1.calendar || 'solar', person1.leapMonth || false)
+    const saju2 = calculateSaju(person2.birth_date, person2.birth_time, person2.birth_city, person2.calendar || 'solar', person2.leapMonth || false)
+    const sajuText1 = getSajuText(person1.birth_date, person1.birth_time, person1.birth_city, person1.calendar || 'solar', person1.leapMonth || false)
+    const sajuText2 = getSajuText(person2.birth_date, person2.birth_time, person2.birth_city, person2.calendar || 'solar', person2.leapMonth || false)
 
     const today = new Date().toLocaleDateString('ko-KR')
     const p1Age = new Date().getFullYear() - parseInt(person1.birth_date.split('-')[0])

@@ -357,9 +357,9 @@ export default function BookingPage() {
                   onChange={e => setBirthHour(e.target.value)}
                   style={{ ...inputStyle, textAlign: 'center', fontWeight: 'bold' }} />
                 <span>시</span>
-                <input type="number" min="0" max="59" placeholder="분" value={birthMinute}
-                  onChange={e => setBirthMinute(e.target.value)}
-                  style={{ ...inputStyle, textAlign: 'center', fontWeight: 'bold' }} />
+                <input type="number" min="0" max="59" step="1" placeholder="분" value={minute}
+              onChange={(e: any) => setMinute(e.target.value)}
+              style={{ ...inputStyle, textAlign: 'center', fontWeight: 'bold' }} />
                 <span>분</span>
               </div>
             </div>
