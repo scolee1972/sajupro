@@ -102,7 +102,7 @@ export default function BookingPage() {
           phoneNumber: phone,
           email: email || undefined,
         },
-      })
+      } as any)
 
       // 결제 실패 처리
       if (response?.code !== undefined) {
