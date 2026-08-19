@@ -15,7 +15,7 @@ const RELATIONSHIPS = [
   { v: 'siblings', l: '👬 형제자매' },
 ]
 
-// 한국 도시 (특별시/광역시/도별 정리)
+// 한국 도시
 const KOREA_CITIES_BY_REGION: Record<string, string[]> = {
   '특별시/광역시': [
     '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종'
@@ -63,7 +63,7 @@ const KOREA_CITIES_BY_REGION: Record<string, string[]> = {
   ],
 }
 
-// 해외 도시 (국가별)
+// 해외 도시
 const FOREIGN_CITIES: Record<string, string[]> = {
   '일본': ['도쿄','요코하마','오사카','나고야','삿포로','고베','교토','후쿠오카','히로시마','센다이','가와사키','사이타마','기타큐슈','치바','카나자와','나가사키','오키나와','나라','오이타','가고시마'],
   '중국/대만/홍콩': ['베이징','상하이','광저우','선전','충칭','톈진','청두','난징','항저우','우한','시안','쑤저우','샤먼','창사','따롄','칭다오','지난','선양','하얼빈','쿤밍','홍콩','마카오','타이베이','가오슝','타이중'],
@@ -78,6 +78,288 @@ const FOREIGN_CITIES: Record<string, string[]> = {
   '아프리카': ['요하네스버그','케이프타운','더반','나이로비','아디스아바바','카사블랑카','라고스','아부자','아크라','다르에스살람','캄팔라','루안다','알제','튀니스','트리폴리'],
 }
 
+// ===== 스타일 (컴포넌트 밖에서 정의) =====
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '10px 14px',
+  border: '1px solid #ddd',
+  borderRadius: '8px',
+  fontSize: '14px',
+  marginTop: '4px',
+  outline: 'none',
+  fontFamily: 'sans-serif',
+  boxSizing: 'border-box',
+}
+
+const labelStyle: React.CSSProperties = {
+  fontWeight: 'bold',
+  color: '#444',
+  fontSize: '13px',
+}
+
+// ===== ⭐ PersonCard 컴포넌트를 밖으로 이동! =====
+interface PersonCardProps {
+  title: string
+  color: string
+  name: string
+  setName: (v: string) => void
+  gender: string
+  setGender: (v: string) => void
+  calendar: string
+  setCalendar: (v: string) => void
+  leapMonth: boolean
+  setLeapMonth: (v: boolean) => void
+  date: string
+  setDate: (v: string) => void
+  hour: string
+  setHour: (v: string) => void
+  minute: string
+  setMinute: (v: string) => void
+  region: string
+  setRegion: (v: string) => void
+  isForeign: boolean
+  setIsForeign: (v: boolean) => void
+  foreignCountry: string
+  setForeignCountry: (v: string) => void
+  city: string
+  setCity: (v: string) => void
+}
+
+function PersonCard({
+  title, color,
+  name, setName,
+  gender, setGender,
+  calendar, setCalendar,
+  leapMonth, setLeapMonth,
+  date, setDate,
+  hour, setHour,
+  minute, setMinute,
+  region, setRegion,
+  isForeign, setIsForeign,
+  foreignCountry, setForeignCountry,
+  city, setCity,
+}: PersonCardProps) {
+  const cityList = isForeign
+    ? (FOREIGN_CITIES[foreignCountry] || [])
+    : (KOREA_CITIES_BY_REGION[region] || [])
+
+  return (
+    <div style={{
+      background: 'white', borderRadius: '12px',
+      padding: '20px', borderTop: `4px solid ${color}`,
+      boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+    }}>
+      <h3 style={{ marginTop: 0, color, fontSize: '16px' }}>{title}</h3>
+
+      <div style={{ marginBottom: '12px' }}>
+        <label style={labelStyle}>이름 *</label>
+        <input 
+          type="text"
+          style={inputStyle} 
+          placeholder="이름" 
+          value={name} 
+          onChange={(e) => setName(e.target.value)} 
+        />
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <label style={labelStyle}>성별</label>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+          {[{ v: 'male', l: '👨' }, { v: 'female', l: '👩' }].map(o => (
+            <button 
+              key={o.v} 
+              type="button"
+              onClick={() => setGender(o.v)} 
+              style={{
+                flex: 1, padding: '8px', borderRadius: '6px',
+                border: gender === o.v ? `2px solid ${color}` : '2px solid #ddd',
+                background: gender === o.v ? color : 'white',
+                color: gender === o.v ? 'white' : '#333',
+                fontWeight: 'bold', cursor: 'pointer',
+              }}
+            >
+              {o.l} {o.v === 'male' ? '남' : '여'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <label style={labelStyle}>달력</label>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+          {[{ v: 'solar', l: '☀️ 양력' }, { v: 'lunar', l: '🌙 음력' }].map(o => (
+            <button 
+              key={o.v} 
+              type="button"
+              onClick={() => setCalendar(o.v)} 
+              style={{
+                flex: 1, padding: '8px', borderRadius: '6px',
+                border: calendar === o.v ? `2px solid ${color}` : '2px solid #ddd',
+                background: calendar === o.v ? color : 'white',
+                color: calendar === o.v ? 'white' : '#333',
+                fontWeight: 'bold', cursor: 'pointer', fontSize: '13px',
+              }}
+            >
+              {o.l}
+            </button>
+          ))}
+        </div>
+        {calendar === 'lunar' && (
+          <label style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            marginTop: '8px', padding: '8px',
+            background: '#fef3c7', borderRadius: '6px', cursor: 'pointer',
+          }}>
+            <input 
+              type="checkbox" 
+              checked={leapMonth}
+              onChange={(e) => setLeapMonth(e.target.checked)}
+              style={{ width: '16px', height: '16px' }} 
+            />
+            <span style={{ fontSize: '12px', color: '#92400e', fontWeight: 'bold' }}>
+              윤달입니다
+            </span>
+          </label>
+        )}
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <label style={labelStyle}>생년월일 *</label>
+        <input 
+          type="date" 
+          style={inputStyle} 
+          value={date} 
+          onChange={(e) => setDate(e.target.value)} 
+        />
+      </div>
+
+      <div style={{ marginBottom: '12px' }}>
+        <label style={labelStyle}>출생 시각 (24시간)</label>
+        <p style={{ fontSize: '11px', color: '#888', margin: '2px 0 4px' }}>
+          💡 정확한 시간 입력 (예: 9시 15분)
+        </p>
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
+          <input
+            type="number"
+            min="0"
+            max="23"
+            step="1"
+            placeholder="시"
+            value={hour}
+            onChange={(e) => setHour(e.target.value)}
+            style={{ ...inputStyle, textAlign: 'center', fontWeight: 'bold' }}
+          />
+          <span style={{ fontSize: '14px', fontWeight: 'bold' }}>시</span>
+          <input
+            type="number"
+            min="0"
+            max="59"
+            step="1"
+            placeholder="분"
+            value={minute}
+            onChange={(e) => setMinute(e.target.value)}
+            style={{ ...inputStyle, textAlign: 'center', fontWeight: 'bold' }}
+          />
+          <span style={{ fontSize: '14px', fontWeight: 'bold' }}>분</span>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '10px' }}>
+        <label style={labelStyle}>출생지</label>
+        <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+          <button 
+            type="button"
+            onClick={() => {
+              setIsForeign(false)
+              setRegion('특별시/광역시')
+              setCity('서울')
+            }} 
+            style={{
+              flex: 1, padding: '8px', borderRadius: '6px',
+              border: !isForeign ? `2px solid ${color}` : '2px solid #ddd',
+              background: !isForeign ? color : 'white',
+              color: !isForeign ? 'white' : '#333',
+              fontWeight: 'bold', cursor: 'pointer', fontSize: '13px',
+            }}
+          >
+            🇰🇷 국내
+          </button>
+          <button 
+            type="button"
+            onClick={() => {
+              setIsForeign(true)
+              setForeignCountry('일본')
+              setCity('도쿄')
+            }} 
+            style={{
+              flex: 1, padding: '8px', borderRadius: '6px',
+              border: isForeign ? `2px solid ${color}` : '2px solid #ddd',
+              background: isForeign ? color : 'white',
+              color: isForeign ? 'white' : '#333',
+              fontWeight: 'bold', cursor: 'pointer', fontSize: '13px',
+            }}
+          >
+            🌏 해외
+          </button>
+        </div>
+      </div>
+
+      {!isForeign ? (
+        <div style={{ marginBottom: '10px' }}>
+          <label style={labelStyle}>지역 (도)</label>
+          <select 
+            style={inputStyle} 
+            value={region}
+            onChange={(e) => {
+              setRegion(e.target.value)
+              const cities = KOREA_CITIES_BY_REGION[e.target.value]
+              if (cities && cities.length > 0) setCity(cities[0])
+            }}
+          >
+            {Object.keys(KOREA_CITIES_BY_REGION).map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <div style={{ marginBottom: '10px' }}>
+          <label style={labelStyle}>국가</label>
+          <select 
+            style={inputStyle} 
+            value={foreignCountry}
+            onChange={(e) => {
+              setForeignCountry(e.target.value)
+              const cities = FOREIGN_CITIES[e.target.value]
+              if (cities && cities.length > 0) setCity(cities[0])
+            }}
+          >
+            {Object.keys(FOREIGN_CITIES).map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div>
+        <label style={labelStyle}>도시</label>
+        <select 
+          style={inputStyle} 
+          value={city} 
+          onChange={(e) => setCity(e.target.value)}
+        >
+          {cityList.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        {isForeign && (
+          <p style={{ fontSize: '11px', color: '#3b82f6', margin: '4px 0 0' }}>
+            🌐 해외 출생: 현지 시간 기준
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ===== 메인 컴포넌트 =====
 export default function CompatibilityPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -135,7 +417,7 @@ export default function CompatibilityPage() {
             calendar: p1Calendar,
             leapMonth: p1LeapMonth,
             birth_date: p1Date,
-            birth_time: String(h1).padStart(2,'0') + ':' + String(m1).padStart(2,'0'),
+            birth_time: String(h1).padStart(2, '0') + ':' + String(m1).padStart(2, '0'),
             birth_city: p1City,
           },
           person2: {
@@ -144,7 +426,7 @@ export default function CompatibilityPage() {
             calendar: p2Calendar,
             leapMonth: p2LeapMonth,
             birth_date: p2Date,
-            birth_time: String(h2).padStart(2,'0') + ':' + String(m2).padStart(2,'0'),
+            birth_time: String(h2).padStart(2, '0') + ':' + String(m2).padStart(2, '0'),
             birth_city: p2City,
           },
           relationship, question,
@@ -164,205 +446,6 @@ export default function CompatibilityPage() {
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '10px 14px',
-    border: '1px solid #ddd', borderRadius: '8px',
-    fontSize: '14px', marginTop: '4px', outline: 'none',
-    fontFamily: 'sans-serif', boxSizing: 'border-box',
-  }
-
-  const labelStyle: React.CSSProperties = {
-    fontWeight: 'bold', color: '#444', fontSize: '13px',
-  }
-
-  function PersonCard({ 
-    title, color, 
-    name, setName, 
-    gender, setGender, 
-    calendar, setCalendar, 
-    leapMonth, setLeapMonth,
-    date, setDate, 
-    hour, setHour, 
-    minute, setMinute, 
-    region, setRegion,
-    isForeign, setIsForeign,
-    foreignCountry, setForeignCountry,
-    city, setCity,
-  }: any) {
-    // 현재 선택된 도시 리스트
-    const cityList = isForeign 
-      ? (FOREIGN_CITIES[foreignCountry] || [])
-      : (KOREA_CITIES_BY_REGION[region] || [])
-
-    return (
-      <div style={{
-        background: 'white', borderRadius: '12px',
-        padding: '20px', borderTop: `4px solid ${color}`,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-      }}>
-        <h3 style={{ marginTop: 0, color, fontSize: '16px' }}>{title}</h3>
-
-        <div style={{ marginBottom: '12px' }}>
-          <label style={labelStyle}>이름 *</label>
-          <input style={inputStyle} placeholder="이름" value={name} onChange={(e: any) => setName(e.target.value)} />
-        </div>
-
-        <div style={{ marginBottom: '12px' }}>
-          <label style={labelStyle}>성별</label>
-          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-            {[{ v: 'male', l: '👨' }, { v: 'female', l: '👩' }].map(o => (
-              <button key={o.v} onClick={() => setGender(o.v)} style={{
-                flex: 1, padding: '8px', borderRadius: '6px',
-                border: gender === o.v ? `2px solid ${color}` : '2px solid #ddd',
-                background: gender === o.v ? color : 'white',
-                color: gender === o.v ? 'white' : '#333',
-                fontWeight: 'bold', cursor: 'pointer',
-              }}>{o.l} {o.v === 'male' ? '남' : '여'}</button>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: '12px' }}>
-          <label style={labelStyle}>달력</label>
-          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-            {[{ v: 'solar', l: '☀️ 양력' }, { v: 'lunar', l: '🌙 음력' }].map(o => (
-              <button key={o.v} onClick={() => setCalendar(o.v)} style={{
-                flex: 1, padding: '8px', borderRadius: '6px',
-                border: calendar === o.v ? `2px solid ${color}` : '2px solid #ddd',
-                background: calendar === o.v ? color : 'white',
-                color: calendar === o.v ? 'white' : '#333',
-                fontWeight: 'bold', cursor: 'pointer', fontSize: '13px',
-              }}>{o.l}</button>
-            ))}
-          </div>
-          {calendar === 'lunar' && (
-            <label style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              marginTop: '8px', padding: '8px',
-              background: '#fef3c7', borderRadius: '6px', cursor: 'pointer',
-            }}>
-              <input type="checkbox" checked={leapMonth} 
-                onChange={(e: any) => setLeapMonth(e.target.checked)}
-                style={{ width: '16px', height: '16px' }} />
-              <span style={{ fontSize: '12px', color: '#92400e', fontWeight: 'bold' }}>
-                윤달입니다
-              </span>
-            </label>
-          )}
-        </div>
-
-        <div style={{ marginBottom: '12px' }}>
-          <label style={labelStyle}>생년월일 *</label>
-          <input type="date" style={inputStyle} value={date} onChange={(e: any) => setDate(e.target.value)} />
-        </div>
-
-        {/* ⭐ 시간 입력 - 1분 단위 정확 입력 */}
-        <div style={{ marginBottom: '12px' }}>
-          <label style={labelStyle}>출생 시각 (24시간)</label>
-          <p style={{ fontSize: '11px', color: '#888', margin: '2px 0 4px' }}>
-            💡 정확한 시간 입력 (예: 9시 15분)
-          </p>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '4px' }}>
-            <input 
-              type="number" 
-              min="0" 
-              max="23" 
-              step="1"
-              placeholder="시" 
-              value={hour}
-              onChange={(e: any) => setHour(e.target.value)}
-              style={{ ...inputStyle, textAlign: 'center', fontWeight: 'bold' }} 
-            />
-            <span style={{ fontSize: '14px', fontWeight: 'bold' }}>시</span>
-            <input 
-              type="number" 
-              min="0" 
-              max="59" 
-              step="1"
-              placeholder="분" 
-              value={minute}
-              onChange={(e: any) => setMinute(e.target.value)}
-              style={{ ...inputStyle, textAlign: 'center', fontWeight: 'bold' }} 
-            />
-            <span style={{ fontSize: '14px', fontWeight: 'bold' }}>분</span>
-          </div>
-        </div>
-
-        {/* ⭐ 출생지 - 국내/해외 선택 */}
-        <div style={{ marginBottom: '10px' }}>
-          <label style={labelStyle}>출생지</label>
-          <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-            <button onClick={() => { 
-              setIsForeign(false); 
-              setRegion('특별시/광역시'); 
-              setCity('서울');
-            }} style={{
-              flex: 1, padding: '8px', borderRadius: '6px',
-              border: !isForeign ? `2px solid ${color}` : '2px solid #ddd',
-              background: !isForeign ? color : 'white',
-              color: !isForeign ? 'white' : '#333',
-              fontWeight: 'bold', cursor: 'pointer', fontSize: '13px',
-            }}>🇰🇷 국내</button>
-            <button onClick={() => { 
-              setIsForeign(true); 
-              setForeignCountry('일본'); 
-              setCity('도쿄');
-            }} style={{
-              flex: 1, padding: '8px', borderRadius: '6px',
-              border: isForeign ? `2px solid ${color}` : '2px solid #ddd',
-              background: isForeign ? color : 'white',
-              color: isForeign ? 'white' : '#333',
-              fontWeight: 'bold', cursor: 'pointer', fontSize: '13px',
-            }}>🌏 해외</button>
-          </div>
-        </div>
-
-        {/* 지역 선택 */}
-        {!isForeign ? (
-          <div style={{ marginBottom: '10px' }}>
-            <label style={labelStyle}>지역 (도)</label>
-            <select style={inputStyle} value={region} 
-              onChange={(e: any) => {
-                setRegion(e.target.value)
-                const cities = KOREA_CITIES_BY_REGION[e.target.value]
-                if (cities && cities.length > 0) setCity(cities[0])
-              }}>
-              {Object.keys(KOREA_CITIES_BY_REGION).map(r => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-          </div>
-        ) : (
-          <div style={{ marginBottom: '10px' }}>
-            <label style={labelStyle}>국가</label>
-            <select style={inputStyle} value={foreignCountry}
-              onChange={(e: any) => {
-                setForeignCountry(e.target.value)
-                const cities = FOREIGN_CITIES[e.target.value]
-                if (cities && cities.length > 0) setCity(cities[0])
-              }}>
-              {Object.keys(FOREIGN_CITIES).map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        <div>
-          <label style={labelStyle}>도시</label>
-          <select style={inputStyle} value={city} onChange={(e: any) => setCity(e.target.value)}>
-            {cityList.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          {isForeign && (
-            <p style={{ fontSize: '11px', color: '#3b82f6', margin: '4px 0 0' }}>
-              🌐 해외 출생: 현지 시간 기준
-            </p>
-          )}
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div style={{
       minHeight: '100vh', background: '#f1f5f9',
@@ -373,7 +456,9 @@ export default function CompatibilityPage() {
         <Link href="/admin" style={{
           color: '#1a2744', textDecoration: 'none',
           fontSize: '14px', fontWeight: 'bold',
-        }}>← 관리자 메인으로</Link>
+        }}>
+          ← 관리자 메인으로
+        </Link>
       </div>
 
       <div style={{
@@ -383,7 +468,7 @@ export default function CompatibilityPage() {
       }}>
         <h1 style={{ margin: 0, fontSize: '22px' }}>☯️ 궁합 분석</h1>
         <p style={{ margin: '6px 0 0', color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>
-          두 사람의 사주를 비교 분석합니다 (국내 150개 도시 + 해외 200개 도시 지원)
+          두 사람의 사주를 비교 분석합니다
         </p>
       </div>
 
@@ -398,13 +483,20 @@ export default function CompatibilityPage() {
           gap: '8px', marginTop: '12px',
         }}>
           {RELATIONSHIPS.map(o => (
-            <button key={o.v} onClick={() => setRelationship(o.v)} style={{
-              padding: '12px 8px', borderRadius: '10px',
-              border: relationship === o.v ? '2px solid #ec4899' : '2px solid #ddd',
-              background: relationship === o.v ? '#fdf2f8' : 'white',
-              cursor: 'pointer', fontSize: '13px',
-              fontWeight: relationship === o.v ? 'bold' : 'normal',
-            }}>{o.l}</button>
+            <button 
+              key={o.v} 
+              type="button"
+              onClick={() => setRelationship(o.v)} 
+              style={{
+                padding: '12px 8px', borderRadius: '10px',
+                border: relationship === o.v ? '2px solid #ec4899' : '2px solid #ddd',
+                background: relationship === o.v ? '#fdf2f8' : 'white',
+                cursor: 'pointer', fontSize: '13px',
+                fontWeight: relationship === o.v ? 'bold' : 'normal',
+              }}
+            >
+              {o.l}
+            </button>
           ))}
         </div>
       </div>
@@ -415,8 +507,8 @@ export default function CompatibilityPage() {
         display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
         gap: '16px',
       }}>
-        <PersonCard 
-          title="👤 첫 번째 사람" 
+        <PersonCard
+          title="👤 첫 번째 사람"
           color="#3b82f6"
           name={p1Name} setName={setP1Name}
           gender={p1Gender} setGender={setP1Gender}
@@ -430,8 +522,8 @@ export default function CompatibilityPage() {
           foreignCountry={p1ForeignCountry} setForeignCountry={setP1ForeignCountry}
           city={p1City} setCity={setP1City}
         />
-        <PersonCard 
-          title="👤 두 번째 사람" 
+        <PersonCard
+          title="👤 두 번째 사람"
           color="#ec4899"
           name={p2Name} setName={setP2Name}
           gender={p2Gender} setGender={setP2Gender}
@@ -454,7 +546,8 @@ export default function CompatibilityPage() {
       }}>
         <label style={labelStyle}>궁금한 내용 (선택)</label>
         <textarea
-          value={question} onChange={e => setQuestion(e.target.value)}
+          value={question} 
+          onChange={e => setQuestion(e.target.value)}
           placeholder="예: 결혼해도 괜찮을까요?"
           style={{
             ...inputStyle, minHeight: '80px', resize: 'vertical',
@@ -463,13 +556,18 @@ export default function CompatibilityPage() {
       </div>
 
       <div style={{ maxWidth: '900px', margin: '0 auto 40px' }}>
-        <button onClick={handleSubmit} disabled={loading} style={{
-          width: '100%', padding: '18px',
-          background: loading ? '#888' : 'linear-gradient(135deg, #ec4899, #be185d)',
-          color: 'white', border: 'none', borderRadius: '14px',
-          fontSize: '20px', fontWeight: 'bold',
-          cursor: loading ? 'not-allowed' : 'pointer',
-        }}>
+        <button 
+          type="button"
+          onClick={handleSubmit} 
+          disabled={loading} 
+          style={{
+            width: '100%', padding: '18px',
+            background: loading ? '#888' : 'linear-gradient(135deg, #ec4899, #be185d)',
+            color: 'white', border: 'none', borderRadius: '14px',
+            fontSize: '20px', fontWeight: 'bold',
+            cursor: loading ? 'not-allowed' : 'pointer',
+          }}
+        >
           {loading ? '⏳ 궁합 분석 중... (약 2~3분)' : '☯️ 궁합 분석 시작'}
         </button>
       </div>
