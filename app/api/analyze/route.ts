@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { calculateSaju, getSajuText } from '@/lib/saju'
+import { calculateSaju } from '@/lib/saju'
 
 export const maxDuration = 60
 
@@ -67,11 +67,16 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ 상담 ID 생성:', consultation.id)
 
-    // 3. 백그라운드 작업 트리거 (응답 대기 안 함!)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || `https://${request.headers.get('host')}`
+    // 3. 백그라운드 작업 트리거 (waitUntil 없이 fetch 후 응답)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL 
+      || `https://${request.headers.get('host')}`
     
-    // 백그라운드 작업 시작 (fire and forget)
-    fetch(`${appUrl}/api/analyze-worker`, {
+    console.log('🚀 워커 호출:', `${appUrl}/api/analyze-worker`)
+
+    // ⭐ 백그라운드 작업 시작 (응답 대기 안 함)
+    // Vercel serverless에서는 fetch를 그냥 던져놓으면 취소되므로
+    // fetch를 시작하고 최소한의 지연 후 응답
+    const workerPromise = fetch(`${appUrl}/api/analyze-worker`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -79,9 +84,19 @@ export async function POST(request: NextRequest) {
         body,
         saju,
       }),
-    }).catch(err => console.error('백그라운드 트리거 오류:', err))
+    }).catch(err => {
+      console.error('워커 호출 오류:', err)
+    })
 
-    // 4. 즉시 응답 (사용자가 결과 페이지로 이동)
+    // fetch 요청이 서버에 도달할 시간 확보 (최소 500ms)
+    await Promise.race([
+      workerPromise,
+      new Promise(resolve => setTimeout(resolve, 500))
+    ])
+
+    console.log('✅ 워커 트리거 완료')
+
+    // 4. 즉시 응답
     return NextResponse.json({
       success: true,
       consultationId: consultation.id,
@@ -90,6 +105,9 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ 오류:', error)
-    return NextResponse.json({ success: false, message: String(error) }, { status: 500 })
+    return NextResponse.json({ 
+      success: false, 
+      message: String(error) 
+    }, { status: 500 })
   }
 }
