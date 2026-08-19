@@ -111,6 +111,16 @@ export default function AdminPage() {
             }}>
               🏠 메인으로
             </Link>
+            <Link href="/admin/password" style={{
+              background: 'rgba(201, 168, 76, 0.3)',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              fontSize: '14px',
+            }}>
+              🔐 비밀번호
+            </Link>
             <button onClick={handleLogout} style={{
               background: 'rgba(239,68,68,0.3)',
               color: 'white',
