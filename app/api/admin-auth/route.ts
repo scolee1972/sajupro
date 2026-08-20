@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
-// SHA-256 해시 함수
 function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password).digest('hex')
 }
@@ -21,7 +20,6 @@ export async function POST(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
-    // DB에서 저장된 비밀번호 해시 가져오기
     const { data, error } = await supabase
       .from('admin_settings')
       .select('value')
@@ -29,21 +27,13 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (error || !data) {
-      // DB에 비밀번호가 없으면 초기 비밀번호로 확인
-      if (password === 'saju2026!') {
-        return NextResponse.json({ success: true })
-      }
+      if (password === 'saju2026!') return NextResponse.json({ success: true })
       return NextResponse.json({ success: false, message: '비밀번호가 틀렸습니다' })
     }
 
-    // 입력한 비밀번호를 해시하여 비교
     const inputHash = hashPassword(password)
-    
-    if (inputHash === data.value) {
-      return NextResponse.json({ success: true })
-    }
+    if (inputHash === data.value) return NextResponse.json({ success: true })
 
-    // 초기 비밀번호로도 확인 (마이그레이션용)
     if (password === 'saju2026!' && data.value === '5e8b1b2c7bce8e3f7f8e2d3c4b5a6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c') {
       return NextResponse.json({ success: true })
     }
@@ -51,8 +41,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, message: '비밀번호가 틀렸습니다' })
 
   } catch (error) {
-    console.error('❌ 로그인 오류:', error)
-    return NextResponse.json({ success: false, message: '오류가 발생했습니다' }, { status: 500 })
+    console.error('로그인 오류:', error)
+    return NextResponse.json({ success: false, message: '서버 오류가 발생했습니다' }, { status: 500 })
   }
 }
 
@@ -62,74 +52,60 @@ export async function PUT(request: NextRequest) {
     const { currentPassword, newPassword } = await request.json()
 
     if (!currentPassword || !newPassword) {
-      return NextResponse.json({ 
-        success: false, 
-        message: '현재 비밀번호와 새 비밀번호를 모두 입력하세요' 
-      })
+      return NextResponse.json({ success: false, message: '비밀번호를 모두 입력하세요' })
     }
 
-    if (newPassword.length < 6) {
-      return NextResponse.json({ 
-        success: false, 
-        message: '새 비밀번호는 6자 이상이어야 합니다' 
-      })
+    // ⭐ 환경변수 체크
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!serviceKey) {
+      console.error('환경변수 누락: SUPABASE_SERVICE_ROLE_KEY')
+      return NextResponse.json({ success: false, message: '서버 설정 오류 (서비스 키 누락)' }, { status: 500 })
     }
 
-        const supabase = createClient(
+    // ⭐ 서비스 롤 키로 관리자용 클라이언트 생성 (우회 권한)
+    const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      serviceKey,
+      { auth: { persistSession: false } } // 중요: 세션 충돌 방지
     )
 
-    // 현재 비밀번호 확인
-    const { data: currentData } = await supabase
+    // 1. 기존 비밀번호 확인
+    const { data: currentData } = await supabaseAdmin
       .from('admin_settings')
       .select('value')
       .eq('key', 'admin_password_hash')
       .maybeSingle()
 
     const currentHash = hashPassword(currentPassword)
-    const initialHash = '5e8b1b2c7bce8e3f7f8e2d3c4b5a6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c'
     
-    // 초기 비밀번호이거나, 저장된 비밀번호와 일치해야 함
     const isValidCurrent = 
       currentPassword === 'saju2026!' || 
       (currentData && currentHash === currentData.value)
 
     if (!isValidCurrent) {
-      return NextResponse.json({ 
-        success: false, 
-        message: '현재 비밀번호가 틀렸습니다' 
-      })
+      return NextResponse.json({ success: false, message: '현재 비밀번호가 틀렸습니다' })
     }
 
-    // 새 비밀번호 해시하여 저장
+    // 2. 새 비밀번호 저장
     const newHash = hashPassword(newPassword)
 
-    const { error } = await supabase
+    const { error: upsertError } = await supabaseAdmin
       .from('admin_settings')
       .upsert({
         key: 'admin_password_hash',
         value: newHash,
         updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'key'
-      })
+      }, { onConflict: 'key' })
 
-    if (error) {
-      console.error('❌ 저장 오류:', error)
-      return NextResponse.json({ 
-        success: false, 
-        message: '비밀번호 변경 실패: ' + error.message 
-      }, { status: 500 })
+    if (upsertError) {
+      console.error('DB 저장 오류:', upsertError)
+      return NextResponse.json({ success: false, message: 'DB 저장 실패: ' + upsertError.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, message: '비밀번호가 변경되었습니다' })
+    return NextResponse.json({ success: true, message: '비밀번호가 변경되었습니다!' })
 
-  } catch (error) {
-    console.error('❌ 변경 오류:', error)
-    return NextResponse.json({ 
-      success: false, 
-      message: '오류가 발생했습니다' 
-    }, { status: 500 })
+  } catch (error: any) {
+    console.error('변경 오류:', error)
+    return NextResponse.json({ success: false, message: '서버 오류: ' + error.message }, { status: 500 })
   }
 }
