@@ -60,7 +60,6 @@ export async function POST(request: NextRequest) {
     const sajuText = getSajuText(birthDate, birthTime, birthCity, calendarType, leapMonth)
 
     const today = new Date()
-    // ⭐ 요일까지 포함한 정확한 오늘 날짜 문자열 생성
     const todayStr = today.toLocaleDateString('ko-KR', {
       year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
     })
@@ -97,7 +96,6 @@ ${majorEvents ? `- 주요 사건:\n${majorEvents}${durationInfo}` : ''}
 [건강/체형] ${bodyType ? `체형: ${bodyType}` : ''} / ${healthStatus || '특이사항 없음'}
 `.trim()
 
-    // ⭐ 공통 정보에 현재 날짜 강력 인지 조건 추가
     const commonInfo = `
 [고객 프로필]
 - 이름: ${name} (${gender === 'male' ? '남성' : '여성'}, 만 ${age}세, ${birthYear}년생)
@@ -301,6 +299,7 @@ ${HTML_GUIDE}
 
     if (custErr) throw custErr
 
+    // ⭐ 핵심 수정: status를 'completed'로, progress를 100으로 저장하여 멈춤 방지!
     const { data: consultation, error: consultErr } = await supabase
       .from('consultations')
       .insert({
@@ -310,6 +309,8 @@ ${HTML_GUIDE}
         question: question || '',
         report_html: reportHtml,
         saju_data: { ...saju, calendarType, leapMonth },
+        status: 'completed',
+        progress: 100,
       })
       .select().single()
 
