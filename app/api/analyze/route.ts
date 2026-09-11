@@ -19,7 +19,7 @@ function cleanHtml(html: string): string {
     .replace(/<\/body>\s*$/gi, '').trim()
 }
 
-// ⭐ 코드 기반 0초 사주/용신/방위/숫자 마스터 알고리즘
+// ⭐ 코드 기반 0.001초 사주 마스터 알고리즘
 function analyzeSajuMaster(saju: any) {
   const STEM_ELEMENT: Record<string, string> = {
     '갑': '목', '을': '목', '병': '화', '정': '화', '무': '토',
@@ -31,12 +31,14 @@ function analyzeSajuMaster(saju: any) {
   }
 
   const elements = { 목: 0, 화: 0, 토: 0, 금: 0, 수: 0 }
-  ;[saju.year, saju.month, saju.day, saju.hour].forEach((p: any) => {
-    if (p?.stem && STEM_ELEMENT[p.stem]) elements[STEM_ELEMENT[p.stem] as keyof typeof elements]++
-    if (p?.branch && BRANCH_ELEMENT[p.branch]) elements[BRANCH_ELEMENT[p.branch] as keyof typeof elements]++
-  })
+  if (saju) {
+    ;[saju.year, saju.month, saju.day, saju.hour].forEach((p: any) => {
+      if (p?.stem && STEM_ELEMENT[p.stem]) elements[STEM_ELEMENT[p.stem] as keyof typeof elements]++
+      if (p?.branch && BRANCH_ELEMENT[p.branch]) elements[BRANCH_ELEMENT[p.branch] as keyof typeof elements]++
+    })
+  }
 
-  const dayElement = STEM_ELEMENT[saju.dayMaster] || '토'
+  const dayElement = (saju?.dayMaster && STEM_ELEMENT[saju.dayMaster]) ? STEM_ELEMENT[saju.dayMaster] : '토'
   const sameCount = elements[dayElement as keyof typeof elements] || 0
   const supportElemMap: Record<string, string> = { '목': '수', '화': '목', '토': '화', '금': '토', '수': '금' }
   const supportElem = supportElemMap[dayElement] || '화'
@@ -133,7 +135,7 @@ export async function POST(request: NextRequest) {
     const saju = calculateSaju(birthDate, birthTime, birthCity, calendarType, leapMonth)
     const sajuText = getSajuText(birthDate, birthTime, birthCity, calendarType, leapMonth)
     
-    // ⭐ 0.001초 만에 명리학 공식으로 마스터 분석 도출 (서버 딜레이 0초!)
+    // ⭐ 명리학 코드로 마스터 분석 도출 (0초 오버헤드)
     const master = analyzeSajuMaster(saju)
 
     const today = new Date()
