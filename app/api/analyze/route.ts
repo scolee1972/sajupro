@@ -19,30 +19,27 @@ function cleanHtml(html: string): string {
     .replace(/<\/body>\s*$/gi, '').trim()
 }
 
-// ⭐ 기존의 품격 있고 완성도 높은 어조 유지
 const TONE_GUIDE = `
 [상담 어조 가이드]
-당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
-전문가로서의 품격과 깊이를 유지하되, 내담자를 위한 명확하고 실질적인 조언을 제공하세요.
-모호한 표현("~할 수도 있습니다")을 지양하고, 확신에 찬 어조("~합니다", "~하시기 바랍니다")를 사용하세요.
+당신은 30년 경력의 명리학 대가입니다.
+조선시대 사대부의 품격과 현대 전문가의 단호함을 함께 갖춘 분입니다.
+
+✅ 권장 표현: "~한 특성이 명확합니다", "반드시 ~를 유념하시기 바랍니다", "각별히 ~에 유의하십시오"
+❌ 지양 표현: "~할 수도 있습니다", "~일 가능성이 있습니다", 너무 부드러운 표현
+⚠️ "제 30년 경력으로...", "단언컨대..." 와 같은 표현은 전체에서 1회만 사용하세요!
 `
 
-// ⭐ 글꼴 깨짐 방지를 위해 모든 태그에 font-family 명시적 강제 부여
 const HTML_GUIDE = `
-HTML 형식 가이드 (반드시 준수할 것):
-- 큰제목: <h2 style="color:#1a2744; border-bottom:2px solid #c9a84c; padding-bottom:10px; margin-top:40px; font-size:22px; font-family:sans-serif; font-weight:bold;">제목</h2>
-- 소제목: <h3 style="color:#1a2744; border-left:4px solid #c9a84c; padding-left:12px; margin-top:24px; font-size:17px; font-family:sans-serif; font-weight:bold;">제목</h3>
-- 단락: <p style="line-height:1.9; margin-bottom:16px; color:#2d2d2d; font-size:15px; font-family:sans-serif;">내용</p>
-- 강조: <strong style="color:#c9a84c;">내용</strong>
-- 일반 박스: <div style="background:#faf8f3; border-left:4px solid #c9a84c; padding:18px; border-radius:8px; margin-bottom:16px; font-family:sans-serif; line-height:1.8; font-size:15px; color:#2d2d2d;">내용</div>
-- 긍정 박스: <div style="background:#f0f7f4; border-left:4px solid #5b8a72; padding:18px; border-radius:8px; margin-bottom:16px; font-family:sans-serif; line-height:1.8; font-size:15px; color:#2d2d2d;">내용</div>
-- 주의 박스: <div style="background:#fdf5f1; border-left:4px solid #b8714a; padding:18px; border-radius:8px; margin-bottom:16px; font-family:sans-serif; line-height:1.8; font-size:15px; color:#2d2d2d;">내용</div>
-- 목록: <ul style="line-height:1.9; font-family:sans-serif; font-size:15px; color:#2d2d2d; margin-bottom:16px;"><li style="margin-bottom:8px;">항목</li></ul>
+HTML 형식:
+- h2 (color:#1a2744, border-bottom:2px solid #c9a84c, padding-bottom:10px, margin-top:40px, font-size:22px)
+- h3 (color:#1a2744, border-left:3px solid #c9a84c, padding-left:12px, margin-top:24px, font-size:17px)
+- p (line-height:1.9, margin-bottom:16px, color:#2d2d2d, font-size:15px)
+- strong (color:#8b6914)
+- 일반 박스: div (background:#faf8f3, border-left:4px solid #c9a84c, padding:18px, border-radius:8px)
+- 강조 박스: div (background:#f0f7f4, border-left:4px solid #5b8a72, padding:18px, border-radius:8px)
+- 주의 박스: div (background:#fdf5f1, border-left:4px solid #b8714a, padding:18px, border-radius:8px)
 
-출력 규칙:
-- HTML만 출력하세요. 마크다운(\`\`\`) 절대 금지.
-- 모든 텍스트는 반드시 위에서 제공한 <p>, <div>, <ul> 등의 태그 안에 넣어서 글꼴이 변하지 않도록 하세요.
-- 바로 <h2> 태그부터 시작하세요.
+출력: HTML만. 마크다운 금지. h2부터 시작.
 `
 
 export async function POST(request: NextRequest) {
@@ -55,6 +52,8 @@ export async function POST(request: NextRequest) {
       birthDate, birthTime, birthCity, birthCountry,
       calendarType, leapMonth, category, question
     } = body
+
+    console.log('📥 입력:', { name, birthDate, birthTime, birthCity })
 
     const saju = calculateSaju(birthDate, birthTime, birthCity, calendarType, leapMonth)
     const sajuText = getSajuText(birthDate, birthTime, birthCity, calendarType, leapMonth)
@@ -70,10 +69,6 @@ export async function POST(request: NextRequest) {
 
     const calendarLabel = calendarType === 'lunar' ? '음력' + (leapMonth ? ' (윤달)' : '') : '양력'
     const dayMaster = saju.dayMaster
-    const yearFull = saju.year.full
-    const monthFull = saju.month.full
-    const dayFull = saju.day.full
-    const hourFull = saju.hour.full
 
     let durationInfo = ''
     if (majorEvents) {
@@ -85,182 +80,238 @@ export async function POST(request: NextRequest) {
     }
 
     const verificationInfo = `
-[검증 및 참고 정보]
+[검증 정보]
 ${familyInfo ? `- 가족: ${familyInfo}` : ''}
-${marriageDate ? `- 결혼일: ${marriageDate}` : ''}
-${divorceDate ? `- 이혼/사별일: ${divorceDate}` : ''}
-${spouseBirth ? `- 배우자: ${spouseBirth}` : ''}
-${childrenInfo ? `- 자녀: ${childrenInfo}` : ''}
 ${majorEvents ? `- 주요 사건:\n${majorEvents}${durationInfo}` : ''}
-[거주지] ${address || '미입력'} (이사/방위 추천 시 기준점)
-[건강/체형] ${bodyType ? `체형: ${bodyType}` : ''} / ${healthStatus || '특이사항 없음'}
+[거주지] ${address || '미입력'} (방위 기준)
+[건강] ${bodyType ? `체형: ${bodyType}` : ''} ${healthStatus || ''}
 `.trim()
 
     const commonInfo = `
-[고객 프로필]
-- 이름: ${name} (${gender === 'male' ? '남성' : '여성'}, 만 ${age}세, ${birthYear}년생)
-- 생년월일: ${birthDate} (${calendarLabel})
-- 출생시각: ${birthTime}
-- 출생지: ${birthCity}${birthCountry && birthCountry !== '대한민국' ? ` (${birthCountry})` : ''}
-
-[상담 환경]
-- 상담일(오늘): ${todayStr} (현재 ${currentYear}년 ${currentMonth}월입니다)
-- 상담분야: ${CATEGORY_KO[category] || '종합'}
-- 질문: ${question || '없음'}
+[고객] ${name} / ${gender === 'male' ? '남' : '여'} / 만 ${age}세 (${birthYear}년생)
+[생일] ${birthDate} (${calendarLabel}) ${birthTime}
+[출생지] ${birthCity}${birthCountry && birthCountry !== '대한민국' ? ` (${birthCountry})` : ''}
+[거주지] ${address || '미입력'}
+[상담일] ${todayStr} / 현재 ${currentYear}년 ${currentMonth}월
+[상담분야] ${CATEGORY_KO[category] || '종합'}
+[질문] ${question || '없음'}
 
 ${verificationInfo}
 
-[사주 원국]
 ${sajuText}
-⭐ 일간(본인) = ${dayMaster}
+⭐ 일간 = ${dayMaster}
 `
 
-    const prompt1 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY!.trim(),
+    })
+
+    // ============================================================================
+    // ⭐ STEP 1: 마스터 플래너 (모든 장에서 일관되게 사용할 절대 기준 마련)
+    // ============================================================================
+    console.log('🎯 1단계: 마스터 플래너 지침 도출 시작...')
+    
+    const masterPrompt = `당신은 사주 명리학 대가입니다.
+아래 고객의 사주와 '질문'을 분석하여, 앞으로 작성될 모든 상담 보고서의 뼈대가 될 '핵심 지침'을 결정하세요.
+
+${commonInfo}
+
+반드시 JSON 형식으로만 아래 양식에 맞춰 출력하세요. 다른 설명은 금지합니다.
+
+{
+  "용신": "오행 1개",
+  "희신": "오행 1개",
+  "기신": "오행 1개",
+  "최적의_연도": "질문 해결이나 운이 가장 크게 트이는 특정 연도 1~2개 (예: 2026년, 2027년)",
+  "최적의_월": "위 연도 중 가장 좋은 구체적인 달 (예: 9~10월)",
+  "절대_피해야할_연도": "가장 흉한 연도",
+  "길한_방위": "현재 거주지(${address || '미입력'}) 기준 가장 좋은 방향 1~2개",
+  "흉한_방위": "절대 가지 말아야 할 방향",
+  "질문에_대한_명확한_결론": "고객의 질문에 대한 아주 명확하고 단호한 결론 (3문장 이내. 예: 사업은 2027년에 해라, 이사는 남쪽으로 가라 등. 1순위, 2순위 명시)"
+}
+`
+
+    const masterMessage = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: masterPrompt }],
+    })
+
+    let masterData: any = {}
+    try {
+      const masterText = masterMessage.content[0].type === 'text' ? masterMessage.content[0].text : '{}'
+      const jsonMatch = masterText.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        masterData = JSON.parse(jsonMatch[0])
+      }
+      console.log('✅ 마스터 지침 도출 완료:', masterData)
+    } catch (e) {
+      console.error('마스터 지침 파싱 실패:', e)
+    }
+
+    // 모든 프롬프트에 강제로 주입할 절대 규칙
+    const MASTER_GUIDELINE = `
+【⭐⭐⭐ 모든 분석에 적용할 절대 일관성 지침 ⭐⭐⭐】
+당신은 독립적으로 글을 쓰지만, 다른 장들과 내용이 충돌하면 안 됩니다.
+반드시 아래의 '마스터 지침'을 100% 반영하여 글을 쓰세요! 임의로 시기나 방향을 바꾸지 마세요!
+
+▶ 용신/희신/기신: ${masterData.용신} / ${masterData.희신} / ${masterData.기신}
+▶ 최적의 연도: ${masterData.최적의_연도 || '내년'}
+▶ 최적의 월: ${masterData.최적의_월 || '가을'}
+▶ 피해야 할 연도: ${masterData.절대_피해야할_연도 || '미정'}
+▶ 길한 방위: ${masterData.길한_방위 || '남쪽'}
+▶ 흉한 방위: ${masterData.흉한_방위 || '북쪽'}
+▶ 고객 질문에 대한 공식 결론: ${masterData.질문에_대한_명확한_결론 || '현재 흐름 유지'}
+
+⚠️ 대운, 세운, 맞춤 분석 등 시기와 방향을 언급할 때 **반드시 위 정보와 일치**하게 서술하세요!
+`
+
+    // ============================================================================
+    // ⭐ STEP 2: 8개 장 병렬 생성 (마스터 지침 포함)
+    // ============================================================================
+    const prompt1 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
 ${TONE_GUIDE}
+${MASTER_GUIDELINE}
 ${commonInfo}
 
 [제1장: 사주 원국 총론]
-- 일간 ${dayMaster}의 본질적 성격과 기질 (5문단 이상)
-- 사주의 전체적인 구조와 특징
-- 타고난 강점 5가지 및 보완점 3가지
+- 사주 원국 표
+- 일간 ${dayMaster}의 성격 (5문단 이상)
+- 사주 구조와 특징, 강점 5가지, 보완점 3가지
 
 [제2장: 과거 시기 검증]
-${majorEvents ? `⚠️ 실제 사건: ${majorEvents}\n이 사건들을 대운/세운과 연결하여 해석하세요.` : ''}
-만 ${age}세 기준, 과거에 겪었을 일들을 분석하세요:
-▶ 유아기~초등 (1~12세)
-▶ 중·고등 (13~18세)
-▶ 20대 (19~29세)
-${age >= 30 ? '▶ 30대' : ''}
-${age >= 40 ? '▶ 40대' : ''}
-${age >= 50 ? '▶ 50대' : ''}
+${majorEvents ? `⚠️ 실제 사건: ${majorEvents}\n대운/세운과 연결!` : ''}
+▶ 유아기~초등 ▶ 중·고등 ▶ 20대 ${age >= 30 ? '▶ 30대' : ''} ${age >= 40 ? '▶ 40대' : ''} ${age >= 50 ? '▶ 50대' : ''}
 
 ${HTML_GUIDE}
-⚠️ 1~2장만 작성하세요.`
+⚠️ 1~2장만 작성!`
 
-    const prompt2 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
+    const prompt2 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
 ${TONE_GUIDE}
+${MASTER_GUIDELINE}
 ${commonInfo}
 
 [제3장: 육친 관계 심층 분석]
-각 기둥별 인간관계를 상세히(각 8문장 이상) 분석하세요.
-▶ 년주(${yearFull}): 조상운/사회배경 (조부모, 유년기 환경)
-▶ 월주(${monthFull}): 부모운/형제운/직장 (부모님과의 관계, 직장 패턴)
-▶ 일주(${dayFull}): 본인/배우자 (연애 스타일, 배우자 성향, 부부 관계)
-▶ 시주(${hourFull}): 자녀운/말년운 (자녀 성향, 노후 삶)
-
-마지막에 "육친 관계 종합 정리" 7문장 이상.
+각 기둥 8문장 이상.
+▶ 년주(${yearFull}): 조상운/사회배경
+▶ 월주(${monthFull}): 부모운/형제운/직장
+▶ 일주(${dayFull}): 본인/배우자
+▶ 시주(${hourFull}): 자녀운/말년운
+마지막 종합 정리 7문장.
 
 ${HTML_GUIDE}
-⚠️ 3장만 작성하세요.`
+⚠️ 3장만 작성!`
 
-    const prompt3 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
+    const prompt3 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
 ${TONE_GUIDE}
+${MASTER_GUIDELINE}
 ${commonInfo}
 
 [제4장: 건강·체질 심층 분석]
-${bodyType ? `⚠️ 실제 체형(${bodyType})을 바탕으로 분석하세요.` : ''}
-▶ 오행 체질 분석 및 장기별 강약
-▶ 추천 식단 (음식 10가지, 피해야 할 음식 5가지)
-▶ 추천 운동 5가지
+${bodyType ? `⚠️ 실제 체형: ${bodyType}` : ''}
+▶ 체질 분석, 장기 강약, 식단 10가지, 피할 음식 5가지, 운동 5가지
 
 [제5장: 격국과 용신]
 ▶ 격국 판단 (7문장 이상)
-▶ 용신 (색상, 방위, 직업 7가지 추천)
-▶ 기신 (피해야 할 것들)
+▶ 용신 (색상, 방위, 직업 7가지)
+▶ 기신
+⚠️ 방위와 용신은 [절대 일관성 지침]의 내용을 반드시 따를 것!
 
 ${HTML_GUIDE}
-⚠️ 4~5장만 작성하세요.`
+⚠️ 4~5장만 작성!`
 
-    const prompt4 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
+    const prompt4 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
 ${TONE_GUIDE}
+${MASTER_GUIDELINE}
 ${commonInfo}
 
 [제6장: 십성 분석]
-10가지 십성의 득실을 분석하세요 (각 4문장 이상).
 비견, 겁재, 식신, 상관, 편재, 정재, 편관, 정관, 편인, 정인
-마지막에 십성 종합 정리(7문장 이상)를 반드시 작성하세요.
+10가지 모두 분석 (각 4문장). 마지막에 십성 종합 정리.
 
 ${HTML_GUIDE}
-⚠️ 6장만 작성하세요. 10개 십성을 빠짐없이 완료하세요.`
+⚠️ 6장만 작성! 10개 모두 완료!`
 
-    const prompt5 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
+    const prompt5 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
 ${TONE_GUIDE}
+${MASTER_GUIDELINE}
 ${commonInfo}
 
-[제7장: 대운 흐름 (현재~미래)]
+[제7장: 대운 흐름 (현재~미래만!)]
 ▶ 현재 대운 (만 ${age}세) - 15문장 이상
 ▶ 다음 대운 (10년 후) - 10문장 이상
 ▶ 그 다음 대운 (20년 후) - 8문장 이상
+⚠️ 대운 흐름을 평가할 때 [절대 일관성 지침]의 길흉 연도와 연결하여 설명할 것!
 
 [제8장: ${currentYear}년 올해의 운세]
-⚠️ 중요: 현재는 ${currentYear}년 ${currentMonth}월입니다!
-⚠️ 이미 지나간 1월부터 ${currentMonth - 1}월까지는 과거이므로 절대 "이때 ~하세요"라고 미래처럼 조언하지 마세요.
-⚠️ 오직 ${currentMonth}월부터 12월까지만 예측하고 조언하세요!
-
-▶ 세운 분석: 올해의 흐름 (7문장 이상)
-▶ 월별 운세: ${currentMonth}월부터 12월까지 각 월별 분석
-▶ 올해 반드시 해야 할 것 5가지
-▶ 올해 절대 하지 말아야 할 것 3가지
+⚠️ 현재는 ${currentMonth}월입니다. 지나간 달은 미래처럼 쓰지 마세요.
+▶ 세운 분석 (7문장)
+▶ 월별 운세 (${currentMonth}월~12월, 각 5문장)
+▶ 핵심 키워드 3가지, 해야 할 것 5가지, 하지 말 것 3가지
 
 ${HTML_GUIDE}
-⚠️ 7~8장만 작성하세요.`
+⚠️ 7~8장만 작성!`
 
-    const prompt6 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
+    const prompt6 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
 ${TONE_GUIDE}
+${MASTER_GUIDELINE}
 ${commonInfo}
 
 [제9장: ${currentYear + 1}~${currentYear + 3}년 향후 3년 흐름]
-각 연도별로 상세히(각 20문장 이상) 예측하세요.
-
+각 연도별 20문장 이상!
 ▶ ${currentYear + 1}년 운세
 ▶ ${currentYear + 2}년 운세
 ▶ ${currentYear + 3}년 운세
-▶ 3년 종합 생존/도약 전략 (10문장 이상)
+▶ 3년 종합 전략
+⚠️ 특정 연도를 평가할 때 반드시 [절대 일관성 지침]의 '최적의 연도'와 '피해야 할 연도'를 기준으로 서술할 것!
 
 ${HTML_GUIDE}
-⚠️ 9장만 작성하세요.`
+⚠️ 9장만 작성!`
 
-    const prompt7 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
+    const prompt7 = `당신은 자평명리학 30년 경력의 최고 대가입니다.
 ${TONE_GUIDE}
+${MASTER_GUIDELINE}
 ${commonInfo}
 
 [제10장: ${CATEGORY_KO[category] || '종합'} 분야 맞춤 심층 분석]
-${question ? `⚠️ 내담자의 질문: "${question}"\n이 질문에 대해 모호하게 답하지 말고 명확한 해법을 제시하세요.` : '▶ 이 분야에 대한 종합 전략'}
+⚠️ 고객 질문: "${question}"
+⚠️ [절대 일관성 지침]에 적힌 "고객 질문에 대한 공식 결론"을 바탕으로 25문장 이상 상세하게 살을 붙여 설명하세요! 
+임의로 결론이나 시기를 바꾸면 절대 안 됩니다.
+
+▶ 사주에서 본 운
+▶ 핵심 답변 (지침 기반)
+▶ 시기별 흐름
 ▶ 실행 전략 10가지
-▶ 주의사항 5가지
+▶ 절대 피해야 할 것 5가지
 
 [제11장: 인생 로드맵 (만 ${age}세 이후 미래만!)]
-⚠️ 현재 나이 이후의 미래만 작성하세요.
-${age < 40 ? '▶ 현재~40대 ▶ 40~50대 ▶ 50~60대 ▶ 60대 이후' : 
-  age < 50 ? '▶ 현재~50대 ▶ 50~60대 ▶ 60~70대 ▶ 70대 이후' : 
-  age < 60 ? '▶ 현재~60대 ▶ 60~70대 ▶ 70~80대 ▶ 80대 이후' : 
-  '▶ 현재~70대 ▶ 70~80대 ▶ 80대 이후'}
-각 시기별 핵심 과제 명시.
+▶ 4개 시기로 나누어 작성 (현재~10년 뒤, 그 이후 순차적으로)
 
 ${HTML_GUIDE}
-⚠️ 10~11장만 작성하세요.`
+⚠️ 10~11장만 작성!`
 
     const prompt8 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
 ${TONE_GUIDE}
+${MASTER_GUIDELINE}
 ${commonInfo}
 
 [제12장: 종합 조언과 마무리]
-▶ 인생의 가장 큰 축복 3가지 (반드시 쟁취할 것)
-▶ 가장 주의해야 할 점 3가지 (피해야 할 것)
+▶ 인생의 가장 큰 축복 3가지
+▶ 가장 주의해야 할 점 3가지
 ▶ 지금 당장 실천해야 할 7가지 행동 강령
 ▶ 따뜻한 격려와 응원 메시지 (최소 20문장 이상, ${name}님의 이름을 부르며 따뜻하게 마무리하세요)
 
 ${HTML_GUIDE}
-⚠️ 12장만 작성하세요. 절대 중간에 끊기지 않게 끝까지 완성하세요.`
+⚠️ 12장만 작성. 절대 끊기지 않게 끝까지 완성하세요.`
 
     const anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY!.trim(),
     })
 
     const prompts = [prompt1, prompt2, prompt3, prompt4, prompt5, prompt6, prompt7, prompt8]
-    const partNames = ['1~2장', '3장 육친', '4~5장', '6장 십성', '7~8장(올해운세)', '9장 향후3년', '10~11장', '12장 종합']
+    const partNames = ['1~2장', '3장 육친', '4~5장', '6장 십성', '7~8장(대운,올해)', '9장 향후3년', '10~11장(맞춤,로드맵)', '12장 종합']
 
-    console.log('🤖 8개 병렬 호출 시작...')
+    console.log('🤖 2단계: 8개 병렬 호출 시작...')
     const messages = await Promise.all(
       prompts.map((prompt, i) => {
         console.log(`  ${i + 1}/8: ${partNames[i]} 시작`)
@@ -299,7 +350,6 @@ ${HTML_GUIDE}
 
     if (custErr) throw custErr
 
-    // ⭐ 핵심 수정: status를 'completed'로, progress를 100으로 저장하여 멈춤 방지!
     const { data: consultation, error: consultErr } = await supabase
       .from('consultations')
       .insert({
@@ -308,7 +358,7 @@ ${HTML_GUIDE}
         category,
         question: question || '',
         report_html: reportHtml,
-        saju_data: { ...saju, calendarType, leapMonth },
+        saju_data: { ...saju, calendarType, leapMonth, masterData }, // 마스터 데이터도 저장
         status: 'completed',
         progress: 100,
       })
