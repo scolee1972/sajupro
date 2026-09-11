@@ -336,6 +336,7 @@ ${commonInfo}
 ${HTML_GUIDE}
 ⚠️ 12장만 작성하세요. 끝까지 완성하세요.`
 
+    // ⭐ 단 한번만 생성되는 Anthropic 인스턴스 (중복 제거 완료)
     const anthropic = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY!.trim(),
     })
