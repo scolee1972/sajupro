@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
 import SajuChart from '../../../../components/SajuChart'
@@ -21,9 +21,7 @@ const CATEGORY_KO: Record<string, string> = {
 
 export default function ResultPage() {
   const params = useParams()
-  const searchParams = useSearchParams()
   const id = params?.id as string
-  const autoGenerate = searchParams?.get('autoGenerate') === 'true'
 
   const [data, setData] = useState<any>(null)
   const [customer, setCustomer] = useState<any>(null)
@@ -61,8 +59,10 @@ export default function ResultPage() {
           .order('created_at', { ascending: false })
         setFollowups(fups || [])
 
-        // 보고서가 비어있고 자동 생성이면 실시간 연속 생성 시작
-        if ((!consult.report_html || consult.status !== 'completed') && !isGeneratingRef.current) {
+        // URL 쿼리에 autoGenerate가 들어있거나 보고서가 비어있으면 실시간 분할 생성 작동
+        const isAuto = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('autoGenerate') === 'true'
+        
+        if ((!consult.report_html || isAuto) && consult.status !== 'completed' && !isGeneratingRef.current) {
           startBatchGeneration(consult.id, cust, consult.saju_data, consult.category, consult.question)
         }
       }
@@ -109,7 +109,7 @@ export default function ResultPage() {
 
     for (let part = 1; part <= 4; part++) {
       setCurrentPart(part)
-      setGenerationMsg(`${partNames[part - 1]} 생성 중... (약 12초 소요)`)
+      setGenerationMsg(`${partNames[part - 1]} 생성 중... (약 10~12초 소요)`)
 
       try {
         const res = await fetch('/api/generate-part', {
@@ -128,7 +128,7 @@ export default function ResultPage() {
       }
     }
 
-    // 전체 4개 파트 완결 후 Supabase DB에 최종 보관
+    // 전체 4개 파트 완결 후 Supabase DB에 최종 저장
     await supabase
       .from('consultations')
       .update({
@@ -144,7 +144,7 @@ export default function ResultPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyCenter: 'center' }}>
+      <div style={{ minHeight: '100vh', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '60px' }}>🔮</div>
           <p>로딩 중...</p>
