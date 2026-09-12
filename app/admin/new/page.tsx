@@ -145,10 +145,10 @@ export default function NewConsultation() {
       const data = await res.json()
 
       if (data.success) {
-        router.push('/admin/result/' + data.consultationId)
+        // 즉시 결과 페이지로 이동하면서 자동 생성을 시작하도록 쿼리 전달
+        router.push(`/admin/result/${data.consultationId}?autoGenerate=true`)
       } else {
-        const msg = typeof data.message === 'string' ? data.message : JSON.stringify(data.message)
-        alert('오류: ' + msg)
+        alert('오류: ' + (data.message || '알 수 없는 오류'))
       }
     } catch (err: any) {
       const msg = typeof err === 'string' ? err : (err?.message || '네트워크 연결 오류 또는 서버 시간 초과입니다.')
