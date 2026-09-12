@@ -144,19 +144,18 @@ export default function NewConsultation() {
 
       const data = await res.json()
 
-            if (data.success) {
+      if (data.success) {
         router.push('/admin/result/' + data.consultationId)
       } else {
-        const msg = typeof data.message === 'object' ? JSON.stringify(data.message) : (data.message || '알 수 없는 오류')
+        const msg = typeof data.message === 'string' ? data.message : JSON.stringify(data.message)
         alert('오류: ' + msg)
       }
     } catch (err: any) {
-      const msg = typeof err === 'object' ? (err.message || JSON.stringify(err)) : String(err)
+      const msg = typeof err === 'string' ? err : (err?.message || '네트워크 연결 오류 또는 서버 시간 초과입니다.')
       alert('오류: ' + msg)
     } finally {
       setLoading(false)
     }
-  }
 
   const handleRegionChange = (region: string) => {
     setBirthRegion(region)
