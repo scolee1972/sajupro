@@ -85,11 +85,11 @@ function generateSajuChartHtml(sajuData: any, customerName: string): string {
             <div style="font-size:9px;opacity:0.8">${sublabel}</div>
           </div>
           <div style="background:${stemInfo?.bg || '#f8f5ef'};padding:12px 4px;text-align:center;border-bottom:1px dashed #ddd">
-            <div style="font-size:24px;font-weight:bold;color:${stemInfo?.color || '#1a2744'}">${stemInfo?.hanja || pillar.stem}</div>
+            <div style="font-size:24px;font-weight:bold;color:${stemInfo?.color || '#1a2744'};font-family:'Noto Serif KR', serif;">${stemInfo?.hanja || pillar.stem}</div>
             <div style="font-size:10px;color:#666;margin-top:2px">${pillar.stem}(${stemInfo?.element || ''})</div>
           </div>
           <div style="background:${branchInfo?.bg || '#f8f5ef'};padding:12px 4px;text-align:center">
-            <div style="font-size:24px;font-weight:bold;color:${branchInfo?.color || '#1a2744'}">${branchInfo?.hanja || pillar.branch}</div>
+            <div style="font-size:24px;font-weight:bold;color:${branchInfo?.color || '#1a2744'};font-family:'Noto Serif KR', serif;">${branchInfo?.hanja || pillar.branch}</div>
             <div style="font-size:10px;color:#666;margin-top:2px">${pillar.branch}(${branchInfo?.element || ''})</div>
           </div>
         </div>
@@ -147,7 +147,7 @@ function generateSajuChartHtml(sajuData: any, customerName: string): string {
       <div style="background:#fffbeb;border:1px solid #c9a84c;border-radius:8px;padding:10px;margin-bottom:16px;text-align:center">
         <div style="font-size:12px;color:#666;margin-bottom:2px">⭐ 일간(日干) - 본인을 나타냅니다</div>
         <div style="font-size:18px;font-weight:bold;color:${dayStemInfo?.color || '#1a2744'}">
-          ${dayStemInfo?.hanja} (${sajuData.dayMaster}) · ${dayStemInfo?.element}
+          <span style="font-family:'Noto Serif KR', serif;">${dayStemInfo?.hanja}</span> (${sajuData.dayMaster}) · ${dayStemInfo?.element}
         </div>
       </div>
 
@@ -222,6 +222,14 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
       }
     })
 
+    // [보완] 한자 유실 방지: 수( )나 목( )처럼 괄호 안이 비어있을 경우 한자 자동 보충
+    filteredHtml = filteredHtml
+      .replace(/목\s*\(\s*\)/g, '목(木)')
+      .replace(/화\s*\(\s*\)/g, '화(火)')
+      .replace(/토\s*\(\s*\)/g, '토(土)')
+      .replace(/금\s*\(\s*\)/g, '금(金)')
+      .replace(/수\s*\(\s*\)/g, '수(水)')
+
     let followupsHtml = ''
     if (includeFollowups && followups.length > 0) {
       followupsHtml += '<h2 style="color:#7c3aed;border-bottom:3px solid #7c3aed;padding-bottom:12px;margin-top:48px;font-size:24px">💬 추가 질의 답변</h2>'
@@ -254,6 +262,8 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
   <meta charset="UTF-8">
   <title>사주분석_${customer?.name || '보고서'}_${today}</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Serif+KR:wght@400;700&display=swap');
+
     @page {
       size: A4;
       margin: 12mm 15mm;
@@ -272,7 +282,7 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
     }
     
     body {
-      font-family: -apple-system, 'Malgun Gothic', sans-serif;
+      font-family: 'Noto Sans KR', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
       line-height: 1.7;
       color: #333;
       margin: 0;
@@ -280,6 +290,11 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
       background: white;
     }
     
+    /* 한자 표기 깨짐 방지 폰트 스타일 */
+    .hanja, span[lang="zh"] {
+      font-family: 'Noto Serif KR', 'Malgun Gothic', serif !important;
+    }
+
     .print-header {
       text-align: center;
       padding: 16px 0;
@@ -295,8 +310,15 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
     .print-header h1 {
       color: #1a2744;
       font-size: 22px;
-      margin: 0 0 6px;
+      margin: 0 0 4px;
       font-weight: bold;
+    }
+
+    .print-header .sub-title {
+      font-size: 13px;
+      color: #c9a84c;
+      font-weight: bold;
+      margin-bottom: 6px;
     }
     
     .print-header .date {
@@ -437,6 +459,7 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
       <div class="print-header">
         <div class="icon">🔮</div>
         <h1>${customer?.name || '고객'}님 사주 분석 보고서</h1>
+        <div class="sub-title">20년 연구 경력의 대기업 임원 출신 명리학자</div>
         <div class="date">${today} 작성</div>
         <div class="print-info">
           <div><strong>📅 생년월일:</strong> ${customer?.birth_date || '-'} ${customer?.birth_time || ''}</div>
@@ -453,6 +476,7 @@ export default function PdfChapterSelector({ reportHtml, customer, followups, sa
     ${followupsHtml}
     
     <div class="print-footer">
+      20년 연구 경력의 대기업 임원 출신 명리학 AI<br/>
       본 보고서는 자평명리학을 기반으로 분석한 결과입니다.<br/>
       절대적이지 않을 수 있으니 참고 자료로만 활용하시기 바랍니다.
     </div>

@@ -87,8 +87,14 @@ function analyzeSajuMaster(saju: any) {
 
 const TONE_GUIDE = `
 [상담 어조 가이드]
-당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
-품격과 깊이를 유지하되 내담자를 위한 명확하고 단호한 조언을 제공하세요.
+당신은 '20년 넘게 명리학을 깊이 연구한 대기업 임원 출신의 명리 전략가'입니다. 
+당신의 분석은 시중의 가벼운 운세와는 차원이 다릅니다. 비즈니스 현장에서의 의사결정 경험과 명리학의 데이터 분석을 결합하여, 고객에게 가장 전략적이고 실질적인 조언을 제공합니다.
+
+[핵심 경력 규칙 - 엄격 준수]
+1. 절대 "30년 경력" 또는 "30년 경력의 명리학자"라는 표현을 사용하지 마십시오.
+2. 반드시 "20년 연구 경력" 또는 "대기업 임원 출신의 통찰"이라고 표현하십시오.
+3. 오행(나무, 불, 흙, 쇠, 물)을 작성할 때는 괄호 안에 한자가 유실되지 않도록 반드시 명시하십시오. 예: 목(木), 화(火), 토(土), 금(金), 수(水). 절대로 '수()'나 '목()'처럼 괄호 안을 비워두면 안 됩니다.
+4. 품격과 깊이를 유지하되 내담자를 위한 명확하고 단호한 결단력 있는 조언을 제공하세요.
 `
 
 const HTML_GUIDE = `
@@ -177,7 +183,7 @@ ${sajuText}
 `
 
     // 🚀 초고속 4개 병렬 프롬프트
-    const prompt1 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
+    const prompt1 = `당신은 '20년 연구 경력의 대기업 임원 출신 명리 전략가'입니다.
 ${TONE_GUIDE}
 ${commonInfo}
 
@@ -189,7 +195,7 @@ ${commonInfo}
 ${HTML_GUIDE}
 ⚠️ 제1장, 제2장, 제3장을 작성하세요.`
 
-    const prompt2 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
+    const prompt2 = `당신은 '20년 연구 경력의 대기업 임원 출신 명리 전략가'입니다.
 ${TONE_GUIDE}
 ${commonInfo}
 
@@ -201,7 +207,7 @@ ${commonInfo}
 ${HTML_GUIDE}
 ⚠️ 제4장, 제5장, 제6장을 작성하세요.`
 
-    const prompt3 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
+    const prompt3 = `당신은 '20년 연구 경력의 대기업 임원 출신 명리 전략가'입니다.
 ${TONE_GUIDE}
 ${commonInfo}
 
@@ -213,14 +219,14 @@ ${commonInfo}
 ${HTML_GUIDE}
 ⚠️ 제7장, 제8장, 제9장을 작성하세요.`
 
-    const prompt4 = `당신은 자평명리학 30년 경력의 최고 전문 상담사입니다.
+    const prompt4 = `당신은 '20년 연구 경력의 대기업 임원 출신 명리 전략가'입니다.
 ${TONE_GUIDE}
 ${commonInfo}
 
 다음 3개 장을 순서대로 작성하세요.
 [제10장: ${CATEGORY_KO[category] || '종합'} 분야 맞춤 심층 분석] (질문 "${question}"에 대한 해법)
 [제11장: 인생 로드맵] (현재 이후 미래 과제)
-[제12장: 종합 조언] (축복 3가지, 주의점 3가지, 행동강령 7가지, 격려 메시지 20문장 이상으로 ${name}님 이름을 부르며 따뜻하게 완결)
+[제12장: 종합 조언] (축복 3가지, 주의점 3가지, 행동강령 7가지, 격려 메시지 20문장 이상으로 ${name}님 이름을 부르며 따뜻하게 완결, 반드시 "20년 연구와 현장 경험을 바탕으로 내린 결론"임을 명시)
 
 ${HTML_GUIDE}
 ⚠️ 제10장, 제11장, 제12장을 완결짓고 마치세요.`
@@ -238,18 +244,28 @@ ${HTML_GUIDE}
         console.log(`  ${i + 1}/4: ${partNames[i]} 시작`)
         return anthropic.messages.create({
           model: 'claude-sonnet-4-5-20250929',
-          max_tokens: 4000,
+          max_tokens: 8000, // 잘림 방지를 위해 토큰 여유 확보
           messages: [{ role: 'user', content: prompt }],
         })
       })
     )
 
     const parts = messages.map((m) => cleanHtml(m.content[0].type === 'text' ? m.content[0].text : ''))
-    const reportHtml = parts.join('')
+    
+    let reportHtml = parts.join('\n\n')
 
+    // [핵심 추가] AI가 오행 괄호를 비워두고 출력했을 때를 대비한 강제 한자 보충 (안전장치)
+    reportHtml = reportHtml
+      .replace(/목\s*\(\s*\)/g, '목(木)')
+      .replace(/화\s*\(\s*\)/g, '화(火)')
+      .replace(/토\s*\(\s*\)/g, '토(土)')
+      .replace(/금\s*\(\s*\)/g, '금(金)')
+      .replace(/수\s*\(\s*\)/g, '수(水)')
+
+    // RLS 권한 우회를 위해 서버 전용 서비스 롤 키(SUPABASE_SERVICE_ROLE_KEY) 사용
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
     const { data: customer, error: custErr } = await supabase
