@@ -22,9 +22,9 @@ function cleanHtml(html: string): string {
 const TONE_GUIDE = `
 [상담 어조 가이드]
 
-당신은 '20년 연구 경력의 대기업 임원 출신 명리학자'입니다. 
+당신은 '20년 연구 경력의 대기업 임원 출신 명리 전략가'입니다. 
 당신의 분석은 매우 논리적이고, 전략적이며, 군더더기가 없습니다.
-또한 조선시대 사대부의 품격과 현대 전문가의 명확함을 함께 갖춘 분입니다.
+비즈니스 현장에서의 의사결정 경험과 명리학의 데이터 분석을 결합하여, 고객에게 가장 전략적이고 실질적인 조언을 제공합니다.
 
 【핵심 원칙】
 1. 품격을 유지하되 핵심은 단호하게 짚으세요
@@ -44,8 +44,9 @@ const TONE_GUIDE = `
 [주의 사항]
 1. 절대 "30년 경력"이라는 표현을 쓰지 마십시오. 대신 "20년 넘게 명리학을 연구하며 얻은 통찰" 또는 "대기업 현장에서 다져진 전략적 안목과 20년의 명리 연구"라고 표현하십시오.
 2. 리포트의 시작이나 끝에 "30년 경력의 명리학자로서 단언하건대" 같은 문구를 절대 사용하지 마십시오.
-3. 오행(나무, 불, 흙, 쇠, 물)을 언급할 때는 반드시 한자를 병기하십시오. 예: 목(木), 화(火), 토(土), 금(金), 수(水).
+3. 오행(나무, 불, 흙, 쇠, 물)을 언급할 때는 반드시 한자를 병기하십시오. 예: 목(木), 화(火), 토(土), 금(金), 수(水). 절대로 '수()'나 '목()'처럼 괄호 안을 비워두지 마십시오.
 4. 문체는 정중하되 대기업 임원처럼 단호하고 결단력 있게 작성하십시오. "그럴 수도 있다"는 식의 모호한 표현보다는 "이러한 흐름이 보이니, ~한 전략이 필요합니다"라고 조언하십시오.
+`
 
 const NUMBER_GUIDE = `
 [오행별 숫자 매칭 표준 - 반드시 준수!]
@@ -91,9 +92,10 @@ export async function POST(request: NextRequest) {
       calendarType, leapMonth, category, question
     } = body
 
+    // RLS 방지를 위해 SUPABASE_SERVICE_ROLE_KEY 우선 적용
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
     // 진행률 업데이트 함수
@@ -157,7 +159,7 @@ ${majorEvents ? `- 주요 사건:\n${majorEvents}${durationInfo}` : ''}
     // ⭐ STEP 1: 핵심 결론 도출 (정확성 보장)
     console.log('🎯 핵심 결론 도출...')
     
-    const corePrompt = `당신은 자평명리학 20년 넘게 연구하며 얻은 통찰을 바탕으로 한 전문가입니다.
+    const corePrompt = `당신은 20년 넘게 명리학을 연구한 대기업 임원 출신의 명리 전략가입니다.
 
 다음 사주를 분석하여 핵심 결론을 JSON으로 출력하세요.
 
@@ -262,7 +264,7 @@ ${coreReference}
 `
 
     // 8개 프롬프트
-    const prompt1 = `20년 연구 경력의 대기업 임원 출신 명리학자.
+    const prompt1 = `20년 연구 경력의 대기업 임원 출신 명리 전략가.
 ${TONE_GUIDE}
 ${NUMBER_GUIDE}
 ${commonInfo}
@@ -292,7 +294,7 @@ ${age >= 50 ? '▶ 50대' : ''}
 ${HTML_GUIDE}
 ⚠️ 1~2장만!`
 
-    const prompt2 = `20년 연구 경력의 대기업 임원 출신 명리학자.
+    const prompt2 = `20년 연구 경력의 대기업 임원 출신 명리 전략가.
 ${TONE_GUIDE}
 ${commonInfo}
 
@@ -309,7 +311,7 @@ ${commonInfo}
 ${HTML_GUIDE}
 ⚠️ 3장만!`
 
-    const prompt3 = `20년 연구 경력의 대기업 임원 출신 명리학자.
+    const prompt3 = `20년 연구 경력의 대기업 임원 출신 명리 전략가.
 ${TONE_GUIDE}
 ${NUMBER_GUIDE}
 ${commonInfo}
@@ -342,7 +344,7 @@ ${bodyType ? `⚠️ 실제 체형: ${bodyType} 우선 반영!` : ''}
 ${HTML_GUIDE}
 ⚠️ 4~5장만!`
 
-    const prompt4 = `20년 연구 경력의 대기업 임원 출신 명리학자.
+    const prompt4 = `20년 연구 경력의 대기업 임원 출신 명리 전략가.
 ${TONE_GUIDE}
 ${commonInfo}
 
@@ -359,7 +361,7 @@ ${commonInfo}
 ${HTML_GUIDE}
 ⚠️ 6장만! 10개+종합정리!`
 
-    const prompt5 = `20년 연구 경력의 대기업 임원 출신 명리학자.
+    const prompt5 = `20년 연구 경력의 대기업 임원 출신 명리 전략가.
 ${TONE_GUIDE}
 ${commonInfo}
 
@@ -385,7 +387,7 @@ ${commonInfo}
 ${HTML_GUIDE}
 ⚠️ 7~8장만!`
 
-    const prompt6 = `20년 연구 경력의 대기업 임원 출신 명리학자.
+    const prompt6 = `20년 연구 경력의 대기업 임원 출신 명리 전략가.
 ${TONE_GUIDE}
 ${commonInfo}
 
@@ -401,7 +403,7 @@ ${commonInfo}
 ${HTML_GUIDE}
 ⚠️ 9장만!`
 
-    const prompt7 = `20년 연구 경력의 대기업 임원 출신 명리학자.
+    const prompt7 = `20년 연구 경력의 대기업 임원 출신 명리 전략가.
 ${TONE_GUIDE}
 ${commonInfo}
 
@@ -448,7 +450,7 @@ ${age < 40 ? `
 ${HTML_GUIDE}
 ⚠️ 10~11장만!`
 
-    const prompt8 = `20년 연구 경력의 대기업 임원 출신 명리학자.
+    const prompt8 = `20년 연구 경력의 대기업 임원 출신 명리 전략가.
 ${TONE_GUIDE}
 ${commonInfo}
 
@@ -469,7 +471,7 @@ ${commonInfo}
 ▶ 따뜻한 격려와 응원 메시지
 ⚠️ 최소 20문장 이상!
 ⚠️ ${name}님 이름 여러 번 언급!
-⚠️ "운명을 개척하시기 바랍니다", "축복합니다" 마무리!
+⚠️ 반드시 "20년 넘게 명리학을 연구하며 얻은 통찰과 대기업 현장에서 다져진 전략적 안목을 바탕으로 전해드립니다"라고 마무리할 것!
 
 ${HTML_GUIDE}
 ⚠️ 12장만! 끝까지 완성!`
@@ -501,7 +503,16 @@ ${HTML_GUIDE}
       return part
     })
 
-    const reportHtml = parts.join('')
+    let reportHtml = parts.join('\n\n')
+
+    // [핵심 보완] 한자 누락 방지 안전장치 (수() -> 수(水) 강제 변환)
+    reportHtml = reportHtml
+      .replace(/목\s*\(\s*\)/g, '목(木)')
+      .replace(/화\s*\(\s*\)/g, '화(火)')
+      .replace(/토\s*\(\s*\)/g, '토(土)')
+      .replace(/금\s*\(\s*\)/g, '금(金)')
+      .replace(/수\s*\(\s*\)/g, '수(水)')
+
     console.log('✅ 전체 길이:', reportHtml.length)
 
     // 최종 결과 저장
@@ -526,7 +537,7 @@ ${HTML_GUIDE}
     if (consultationId) {
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       )
       await supabase
         .from('consultations')
